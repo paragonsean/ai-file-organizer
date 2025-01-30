@@ -59,15 +59,6 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,
 
     std::string dllPath = exeDir + "\\lib";
     addToPath(dllPath);
-
-    // Debug: Print the updated PATH
-    // char* newPath = getenv("PATH");
-    // if (newPath) {
-    //     std::cout << "Current PATH: " << newPath << std::endl;
-    // } else {
-    //     std::cerr << "Failed to retrieve updated PATH." << std::endl;
-    // }
-
     launchMainApp();
     return EXIT_SUCCESS;
 }
