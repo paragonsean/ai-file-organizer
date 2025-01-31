@@ -6,7 +6,9 @@ AI File Sorter is a powerful, cross-platform desktop application that automates 
 
 [![Download ai-file-sorter](https://a.fsdn.com/con/app/sf-download-button)](https://sourceforge.net/projects/ai-file-sorter/files/latest/download)
 
-[A review from Softpedia](https://www.softpedia.com/get/File-managers/AI-File-Sorter.shtml)
+<a href="https://www.softpedia.com/get/File-managers/AI-File-Sorter.shtml" target="_blank">A review from Softpedia 🗗</a>
+
+<a href="https://github.com/hyperfield/ai-file-sorter" target="_blank">App's website 🗗</a>
 
 ![AI File Sorter Screenshot](screenshots/AI-File-Sorter_screenshot-1.png) ![AI File Sorter Screenshot](screenshots/AI-File-Sorter_screenshot-2.png) ![AI File Sorter Screenshot](screenshots/AI-File-Sorter_screenshot-3.png) ![AI File Sorter Screenshot](screenshots/AI-File-Sorter_screenshot-4.png)
 
