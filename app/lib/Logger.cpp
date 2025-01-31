@@ -45,20 +45,26 @@ void Logger::setup_loggers()
     std::string log_dir = get_log_directory();
     Utils::ensure_directory_exists(log_dir);
 
-    auto ui_log_path = log_dir + "/ui.log";
+    auto core_log_path = log_dir + "/core.log";
     auto db_log_path = log_dir + "/db.log";
-
-    auto ui_console_sink = std::make_shared<spdlog::sinks::stdout_color_sink_mt>();
-    auto ui_file_sink = std::make_shared<spdlog::sinks::rotating_file_sink_mt>(ui_log_path, 1048576 * 5, 3);
+    auto ui_log_path = log_dir + "/ui.log";
+    
+    auto core_console_sink = std::make_shared<spdlog::sinks::stdout_color_sink_mt>();
+    auto core_file_sink = std::make_shared<spdlog::sinks::rotating_file_sink_mt>(db_log_path, 1048576 * 5, 3);
 
     auto db_console_sink = std::make_shared<spdlog::sinks::stdout_color_sink_mt>();
     auto db_file_sink = std::make_shared<spdlog::sinks::rotating_file_sink_mt>(db_log_path, 1048576 * 5, 3);
 
-    auto ui_logger = std::make_shared<spdlog::logger>("ui_logger", spdlog::sinks_init_list{ui_console_sink, ui_file_sink});
-    auto db_logger = std::make_shared<spdlog::logger>("db_logger", spdlog::sinks_init_list{db_console_sink, db_file_sink});
+    auto ui_console_sink = std::make_shared<spdlog::sinks::stdout_color_sink_mt>();
+    auto ui_file_sink = std::make_shared<spdlog::sinks::rotating_file_sink_mt>(ui_log_path, 1048576 * 5, 3);
 
-    spdlog::register_logger(ui_logger);
+    auto core_logger = std::make_shared<spdlog::logger>("core_logger", spdlog::sinks_init_list{core_console_sink, core_file_sink});
+    auto db_logger = std::make_shared<spdlog::logger>("db_logger", spdlog::sinks_init_list{db_console_sink, db_file_sink});
+    auto ui_logger = std::make_shared<spdlog::logger>("ui_logger", spdlog::sinks_init_list{ui_console_sink, ui_file_sink});
+
+    spdlog::register_logger(core_logger);
     spdlog::register_logger(db_logger);
+    spdlog::register_logger(ui_logger);
 
     spdlog::set_level(spdlog::level::warn);
     spdlog::info("Loggers initialized.");

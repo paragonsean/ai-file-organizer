@@ -40,6 +40,7 @@ MainApp::MainApp(int argc, char **argv)
       use_subcategories_checkbox(nullptr), 
       categorize_files_checkbox(nullptr), 
       categorize_directories_checkbox(nullptr),
+      core_logger(Logger::get_logger("core_logger")),
       ui_logger(Logger::get_logger("ui_logger"))
 {
     stop_analysis = false;
@@ -77,7 +78,7 @@ void MainApp::on_quit()
 
 void MainApp::load_settings() {
     if (!settings.load()) {
-        g_print("Failed to load settings, using defaults.\n");
+        core_logger->info("Failed to load settings, using defaults.");
     }
     sync_settings_to_ui();
 }

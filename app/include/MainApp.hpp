@@ -68,6 +68,7 @@ private:
     GtkCheckButton *use_subcategories_checkbox;
     GtkCheckButton *categorize_files_checkbox;
     GtkCheckButton *categorize_directories_checkbox;
+    std::shared_ptr<spdlog::logger> core_logger;
     std::shared_ptr<spdlog::logger> ui_logger;
 
     GtkApplication *create_app();
