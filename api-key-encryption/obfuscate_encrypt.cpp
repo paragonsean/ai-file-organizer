@@ -2,7 +2,7 @@
 #include <stddef.h>
 #include <string>
 #include <cstring>
-#include "dotenv.h"
+#include "../app/include/external/dotenv.h"
 #include <stdexcept>
 #include <iostream>
 #include <random>
