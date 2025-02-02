@@ -8,8 +8,6 @@ AI File Sorter is a powerful, cross-platform desktop application that automates 
 
 <a href="https://www.softpedia.com/get/File-managers/AI-File-Sorter.shtml" target="_blank">A review from Softpedia 🗗</a>
 
-<a href="https://github.com/hyperfield/ai-file-sorter" target="_blank">App's website 🗗</a>
-
 ![AI File Sorter Screenshot](screenshots/AI-File-Sorter_screenshot-1.png) ![AI File Sorter Screenshot](screenshots/AI-File-Sorter_screenshot-2.png) ![AI File Sorter Screenshot](screenshots/AI-File-Sorter_screenshot-3.png) ![AI File Sorter Screenshot](screenshots/AI-File-Sorter_screenshot-4.png)
 
 ---
@@ -46,7 +44,7 @@ AI File Sorter is a powerful, cross-platform desktop application that automates 
 
 ## Requirements
 
-- **Operating System**: Windows, macOS, or Linux with an internet connection  
+- **Operating System**: Windows, macOS, or Linux with a stable internet connection
 - **C++ Compiler**: A recent `g++` version (used in `Makefile`)  
 - **OpenAI API Key**: Required for AI-based categorization  
 - **Dependencies**: Installed during setup (see installation instructions below)  
@@ -58,6 +56,24 @@ AI File Sorter is a powerful, cross-platform desktop application that automates 
 Note: you will need to get an OpenAI API key and add a minimal balance to it for this program to work. The instructions on how to integrate your API key into the app are given below.
 
 ### Windows
+
+#### Install Git
+
+First, you need `git`. Download `git-scm` for Windows from [git-scm.com](https://git-scm.com/downloads) and install it. Verify the installation in `cmd` or `powershell` with
+
+    git --version
+
+You can also now launch `Git Bash` from Start Menu.
+
+##### Clone the repository
+
+    git clone https://github.com/hyperfield/ai-file-sorter.git
+
+##### Navigate into the directory
+
+    cd ai-file-sorter
+
+#### Compile the app
 
 1. Install and launch [MSYS2](https://www.msys2.org/).
 2. Update MSYS2 packages: `pacman -Syu`.
@@ -146,7 +162,7 @@ Before compiling the app:
 1. Get an OpenAI API key from the [OpenAI website](https://platform.openai.com/).  
    A minimal balance is required in your OpenAI API account for the app to function.
 
-2. Generate a 32-byte random secret key, e.g., using [this tool](https://generate-random.org/encryption-key-generator).
+2. Generate a 32-character random secret key, e.g., using [this tool](https://passwords-generator.org/32-character).
 
 3. Navigate to the `api-key-encryption` folder and edit the `encryption.ini` as follows:
 
@@ -163,12 +179,12 @@ Before compiling the app:
    - Encrypted data (hex)
 
 6. Update the application files:
-   - Add the values to `resources/.env` as shown:
+   - Add the values to `app/resources/.env` as shown:
      ```
      ENV_PC=obfuscated-key-part1-value
      ENV_RR=encrypted-data-hex-value
      ```
-   - Update `CryptoManager.cpp` with Obfuscated Key part 2:
+   - Update `app/lib/CryptoManager.cpp` with Obfuscated Key part 2:
      ```cpp
      std::string CryptoManager::embedded_pc = "obfuscated-key-part2-value";
      ```
