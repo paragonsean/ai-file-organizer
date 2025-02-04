@@ -164,7 +164,7 @@ DatabaseManager::get_categorization_from_db(const std::string& file_name, const 
         const char* category = reinterpret_cast<const char*>(sqlite3_column_text(stmtcat, 0));
         const char* subcategory = reinterpret_cast<const char*>(sqlite3_column_text(stmtcat, 1));
 
-        std::cout << "Got categorization from DB: " << category << " " << subcategory << std::endl;
+        // std::cout << "Got categorization from DB: " << category << " " << subcategory << std::endl;
 
         categorization.push_back(category ? category : "");
         categorization.push_back(subcategory ? subcategory : "");

@@ -179,16 +179,15 @@ Before compiling the app:
    - Encrypted data (hex)
 
 6. Update the application files:
+   - Update `app/include/CryptoManager.hpp` with Obfuscated Key part 1:
+     ```cpp
+     static constexpr char embedded_pc[] = "insert-obfuscated-Key-part-1-here";
+     ```
    - Add the values to `app/resources/.env` as shown:
      ```
-     ENV_PC=obfuscated-key-part1-value
+     ENV_PC=obfuscated-key-part2-value
      ENV_RR=encrypted-data-hex-value
      ```
-   - Update `app/lib/CryptoManager.cpp` with Obfuscated Key part 2:
-     ```cpp
-     std::string CryptoManager::embedded_pc = "obfuscated-key-part2-value";
-     ```
-
 ---
 
 

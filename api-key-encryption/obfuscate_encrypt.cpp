@@ -67,8 +67,8 @@ std::pair<std::string, std::string> decompose_key(const std::string& api_key)
 
     // Split the key into two halves
     size_t mid = api_key.length() / 2;
-    std::string part1 = api_key.substr(0, mid);  // First part of the key
-    std::string part2 = api_key.substr(mid);     // Second part of the key
+    std::string part1 = api_key.substr(0, mid);
+    std::string part2 = api_key.substr(mid);
 
     return std::make_pair(part1, part2);
 }
@@ -82,9 +82,8 @@ std::string reassemble_key(const std::string& part1, const std::string& part2)
 
 std::string generate_random_salt(size_t length = 16) {
     const char charset[] = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
-    const size_t max_index = sizeof(charset) - 1;
+    const size_t max_index = sizeof(charset) - 2;
 
-    // Use a secure random device for entropy
     std::random_device rd;
     std::mt19937 generator(rd());
     std::uniform_int_distribution<size_t> distribution(0, max_index);

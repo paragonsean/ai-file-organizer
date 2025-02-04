@@ -132,4 +132,5 @@ CategorizationProgressDialog::~CategorizationProgressDialog()
     }
 
     m_StopButton = nullptr;
+    buffer = nullptr;
 }
