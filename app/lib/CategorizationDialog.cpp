@@ -6,8 +6,9 @@
 #include <gtk/gtkentry.h>
 #include <filesystem>
 #include <CategorizationDialog.hpp>
-#include <CategorizedFile.hpp>
+#include <MovableCategorizedFile.hpp>
 #include <DatabaseManager.hpp>
+#include <Types.hpp>
 
 
 CategorizationDialog::CategorizationDialog(DatabaseManager* db_manager, gboolean show_subcategory_col)
@@ -22,7 +23,10 @@ CategorizationDialog::CategorizationDialog(DatabaseManager* db_manager, gboolean
     if (!gtk_builder_add_from_resource(builder, "/net/quicknode/AIFileSorter/ui/sort_confirm.glade", &error)) {
         g_critical("Failed to load resource: %s", error->message);
         g_error_free(error);
-        g_object_unref(builder);
+        if (builder) {
+            g_object_unref(builder);
+            builder = nullptr;
+        }
         return;
     }
 
@@ -33,7 +37,7 @@ CategorizationDialog::CategorizationDialog(DatabaseManager* db_manager, gboolean
         g_warning("'categorization_dialog' is not a valid GtkDialog.");
     }
 
-    gtk_window_set_default_size(GTK_WINDOW(dialog), 800, 1000);
+    gtk_window_set_default_size(GTK_WINDOW(dialog), 1200, 1000);
     gtk_window_set_resizable(GTK_WINDOW(dialog), TRUE);
 
     treeview = GTK_TREE_VIEW(gtk_builder_get_object(builder, "file_category_treeview"));
@@ -192,13 +196,12 @@ void CategorizationDialog::on_continue_later_button_clicked()
 
 gboolean CategorizationDialog::on_dialog_close(GtkWidget *widget, GdkEvent *event, gpointer user_data) {
     record_categorization_to_db();
-    return FALSE;  // Return FALSE to propagate the event, which will close the dialog
+    return FALSE;
 }
 
 
 void CategorizationDialog::show_results(
-    const std::vector<std::tuple<std::string, std::string, std::string,
-    std::string, std::string>>& categorized_files)
+    const std::vector<CategorizedFile>& categorized_files)
 {
     this->categorized_files = categorized_files;
 
@@ -208,15 +211,13 @@ void CategorizationDialog::show_results(
         GtkTreeIter iter;
         gtk_list_store_append(liststore, &iter);
 
-        std::string icon_name = (std::get<2>(file) == "D") ? "folder" : "text-x-script";
-
         gtk_list_store_set(liststore, &iter,
-                           0, std::get<1>(file).c_str(),  // File Name
-                           1, std::get<2>(file).c_str(),  // File Type (Hidden "F" or "D")
-                           2, icon_name.c_str(),          // File Type Icon
-                           3, std::get<3>(file).c_str(),  // Category
-                           4, std::get<4>(file).c_str(),  // Subcategory
-                           5, "",            // Sorted Status Icon
+                           0, file.file_name.c_str(),
+                           1, (file.type == FileType::Directory) ? "D" : "F",
+                           2, (file.type == FileType::Directory) ? "folder" : "text-x-script", // Icon,
+                           3, file.category.c_str(),
+                           4, file.subcategory.c_str(),
+                           5, "",                         // Sorted Status Icon placeholder
                            -1);
     }
 
@@ -232,7 +233,8 @@ void CategorizationDialog::show_results(
 
 
 std::vector<std::tuple<std::string, std::string, std::string, std::string>>
-CategorizationDialog::get_categorized_files_from_treeview() {
+CategorizationDialog::get_categorized_files_from_treeview()
+{
     GtkTreeModel *model = gtk_tree_view_get_model(GTK_TREE_VIEW(treeview));
     GtkTreeIter iter;
     gboolean valid = gtk_tree_model_get_iter_first(model, &iter);
@@ -245,10 +247,10 @@ CategorizationDialog::get_categorized_files_from_treeview() {
         gchar *subcategory;
 
         gtk_tree_model_get(model, &iter,
-                           0, &file_name,     // File Name
-                           1, &file_type,     // File Type (Hidden)
-                           3, &category,      // Category
-                           4, &subcategory,   // Subcategory
+                           0, &file_name,
+                           1, &file_type,     // Hidden
+                           3, &category,
+                           4, &subcategory,
                            -1);
 
         categorized_files.emplace_back(file_name, file_type, category, subcategory);
@@ -264,21 +266,22 @@ CategorizationDialog::get_categorized_files_from_treeview() {
 }
 
 
-void CategorizationDialog::on_confirm_and_sort_button_clicked() {
+void CategorizationDialog::on_confirm_and_sort_button_clicked()
+{
     record_categorization_to_db();
 
     auto files = get_categorized_files_from_treeview();
     std::vector<std::string> files_not_moved;
 
     if (!categorized_files.empty()) {
-        std::string dir_path = std::filesystem::path(std::get<0>(categorized_files[0])).string();
+        std::string dir_path = std::filesystem::path(categorized_files[0].file_path).string();
 
         GtkTreeIter iter;
         gboolean valid = gtk_tree_model_get_iter_first(GTK_TREE_MODEL(liststore), &iter);
         for (const auto& [file_name, file_type, category, subcategory] : files) {
-            g_print("Processing file: %s\n", file_name.c_str());
+            // g_print("Processing file: %s\n", file_name.c_str());
 
-            CategorizedFile categorizedFile(dir_path, category, subcategory, file_name, file_type);
+            MovableCategorizedFile categorizedFile(dir_path, category, subcategory, file_name, file_type);
 
             categorizedFile.create_cat_dirs(show_subcategory_col);
             if (categorizedFile.move_file(show_subcategory_col)) {
@@ -299,15 +302,15 @@ void CategorizationDialog::on_confirm_and_sort_button_clicked() {
         return;
     }
 
-    g_print("Finished file move operations\n");
+    // g_print("Finished file move operations\n");
 
     if (files_not_moved.empty()) {
-        g_print("All files have been sorted and moved successfully.\n");
+        // g_print("All files have been sorted and moved successfully.\n");
     } else {
-        g_print("The following files have not been moved because they already exist at the destination:\n");
-        for (const auto& file_name : files_not_moved) {
-            g_print("%s\n", file_name.c_str());
-        }
+        // g_print("The following files have not been moved because they already exist at the destination:\n");
+        // for (const auto& file_name : files_not_moved) {
+        //     g_print("%s\n", file_name.c_str());
+        // }
     }
 
     show_close_button();
@@ -364,7 +367,7 @@ void CategorizationDialog::record_categorization_to_db()
     int index = 0;
 
     for (const auto& [file_name, file_type, category, subcategory] : files) {
-        std::string full_file_path = std::get<0>(categorized_files[index]);
+        std::string full_file_path = categorized_files[index].file_path;
         std::string dir_path = std::filesystem::path(full_file_path).string();
         db_manager->insert_or_update_file_with_categorization(file_name, file_type, dir_path, category, subcategory);
         index++;

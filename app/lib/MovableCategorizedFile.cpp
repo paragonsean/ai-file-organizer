@@ -1,10 +1,10 @@
-#include "CategorizedFile.hpp"
+#include "MovableCategorizedFile.hpp"
 #include "Utils.hpp"
 #include <filesystem>
 #include <gtk/gtk.h>
 
 
-CategorizedFile::CategorizedFile(
+MovableCategorizedFile::MovableCategorizedFile(
     const std::string& dir_path, const std::string& cat, const std::string& subcat,
     const std::string& file_name, const std::string& file_type)
     : file_name(file_name),
@@ -24,7 +24,7 @@ CategorizedFile::CategorizedFile(
 }
 
 
-void CategorizedFile::create_cat_dirs(bool use_subcategory)
+void MovableCategorizedFile::create_cat_dirs(bool use_subcategory)
 {
     try {
         if (!std::filesystem::exists(category_path)) {
@@ -40,7 +40,7 @@ void CategorizedFile::create_cat_dirs(bool use_subcategory)
 }
 
 
-bool CategorizedFile::move_file(bool use_subcategory)
+bool MovableCategorizedFile::move_file(bool use_subcategory)
 {
     std::filesystem::path categorized_path;
     if (use_subcategory) {
@@ -74,52 +74,52 @@ bool CategorizedFile::move_file(bool use_subcategory)
 }
 
 
-std::string CategorizedFile::get_subcategory_path() const
+std::string MovableCategorizedFile::get_subcategory_path() const
 {
     return subcategory_path.string();
 }
 
 
-std::string CategorizedFile::get_category_path() const
+std::string MovableCategorizedFile::get_category_path() const
 {
     return category_path.string();
 }
 
 
-std::string CategorizedFile::get_destination_path() const
+std::string MovableCategorizedFile::get_destination_path() const
 {
     return destination_path.string();
 }
 
 
-std::string CategorizedFile::get_file_name() const
+std::string MovableCategorizedFile::get_file_name() const
 {
     return file_name;
 }
 
-std::string CategorizedFile::get_dir_path() const
+std::string MovableCategorizedFile::get_dir_path() const
 {
     return dir_path;
 }
 
-std::string CategorizedFile::get_category() const
+std::string MovableCategorizedFile::get_category() const
 {
     return category;
 }
 
-std::string CategorizedFile::get_subcategory() const
+std::string MovableCategorizedFile::get_subcategory() const
 {
     return subcategory;
 }
 
-void CategorizedFile::set_category(std::string& category)
+void MovableCategorizedFile::set_category(std::string& category)
 {
     this->category = category;
 }
 
-void CategorizedFile::set_subcategory(std::string& subcategory)
+void MovableCategorizedFile::set_subcategory(std::string& subcategory)
 {
     this->subcategory = subcategory;
 }
 
-CategorizedFile::~CategorizedFile() {}
+MovableCategorizedFile::~MovableCategorizedFile() {}

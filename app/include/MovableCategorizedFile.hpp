@@ -1,19 +1,18 @@
-#ifndef CATEGORIZEDFILE_HPP
-#define CATEGORIZEDFILE_HPP
+#ifndef MOVABLECATEGORIZEDFILE_HPP
+#define MOVABLECATEGORIZEDFILE_HPP
 
 #include <string>
 #include <filesystem>
 
-
-class CategorizedFile {
+class MovableCategorizedFile {
 public:
-    CategorizedFile();
-    CategorizedFile(const std::string& dir_path,
+    MovableCategorizedFile();
+    MovableCategorizedFile(const std::string& dir_path,
                     const std::string& cat,
                     const std::string& subcat,
                     const std::string& file_name,
                     const std::string& file_type);
-    ~CategorizedFile();
+    ~MovableCategorizedFile();
     void create_cat_dirs(bool use_subcategory);
     bool move_file(bool use_subcategory);
 

@@ -7,6 +7,7 @@
 #include <sqlite3.h>
 #include <unistd.h>
 #include <glib.h>
+#include <Types.hpp>
 
 
 DatabaseManager::DatabaseManager(std::string config_dir) :
@@ -89,15 +90,15 @@ bool DatabaseManager::insert_or_update_file_with_categorization(const std::strin
 }
 
 
-std::vector<std::tuple<std::string, std::string, std::string, std::string, std::string>>
+std::vector<CategorizedFile>
 DatabaseManager::get_categorized_files(const std::string& directory_path)
 {
-    std::vector<std::tuple<std::string, std::string, std::string, std::string, std::string>> categorized_files;
+    std::vector<CategorizedFile> categorized_files;
     const char *sql = "SELECT dir_path, file_name, file_type, category, subcategory FROM file_categorization WHERE dir_path=?;";
     sqlite3_stmt *stmtcat;
 
     if (sqlite3_prepare_v2(db, sql, -1, &stmtcat, nullptr) != SQLITE_OK) {
-        g_print("SQL error: %s\n", sqlite3_errmsg(db));
+        // g_print("SQL error: %s\n", sqlite3_errmsg(db));
         return categorized_files;
     }
 
@@ -114,7 +115,16 @@ DatabaseManager::get_categorized_files(const std::string& directory_path)
         const char* category = reinterpret_cast<const char*>(sqlite3_column_text(stmtcat, 3));
         const char* subcategory = reinterpret_cast<const char*>(sqlite3_column_text(stmtcat, 4));
 
-        categorized_files.push_back(std::make_tuple(file_dir_path, file_name, file_type, category, subcategory));
+        // Ensure null safety for strings
+        std::string dir_path = file_dir_path ? file_dir_path : "";
+        std::string name = file_name ? file_name : "";
+        std::string type_str = file_type ? file_type : "";
+        std::string cat = category ? category : "";
+        std::string subcat = subcategory ? subcategory : "";
+
+        FileType file_type_enum = (type_str == "F") ? FileType::File : FileType::Directory;
+
+        categorized_files.push_back({dir_path, name, file_type_enum, cat, subcat});
     }
 
     sqlite3_finalize(stmtcat);
@@ -124,7 +134,7 @@ DatabaseManager::get_categorized_files(const std::string& directory_path)
 
 
 std::vector<std::string>
-DatabaseManager::get_categorization_from_db(const std::string& file_name, const std::string& file_type)
+DatabaseManager::get_categorization_from_db(const std::string& file_name, const FileType file_type)
 {
     std::vector<std::string> categorization;
     const char *sql = "SELECT category, subcategory FROM file_categorization WHERE file_name = ? AND file_type = ?;";
@@ -141,7 +151,9 @@ DatabaseManager::get_categorization_from_db(const std::string& file_name, const 
         return categorization;
     }
 
-    if (sqlite3_bind_text(stmtcat, 2, file_type.c_str(), -1, SQLITE_STATIC) != SQLITE_OK) {
+    std::string file_type_str = (file_type == FileType::File) ? "F" : "D";
+
+    if (sqlite3_bind_text(stmtcat, 2, file_type_str.c_str(), -1, SQLITE_STATIC) != SQLITE_OK) {
         std::cerr << "Failed to bind file_type: " << sqlite3_errmsg(db) << std::endl;
         sqlite3_finalize(stmtcat);
         return categorization;

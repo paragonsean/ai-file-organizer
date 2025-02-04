@@ -1,11 +1,11 @@
 #ifndef DATABASEMANAGER_HPP
 #define DATABASEMANAGER_HPP
 
+#include "Types.hpp"
 #include <string>
 #include <map>
 #include <vector>
 #include <sqlite3.h>
-
 
 class DatabaseManager {
 public:
@@ -20,11 +20,10 @@ public:
                                                    const std::string& subcategory);
     std::vector<std::string> get_dir_contents_from_db(const std::string &dir_path);
 
-    std::vector<std::tuple<std::string, std::string, std::string, std::string, std::string>>
-        get_categorized_files(const std::string &directory_path);
+    std::vector<CategorizedFile> get_categorized_files(const std::string &directory_path);
 
     std::vector<std::string>
-        get_categorization_from_db(const std::string& file_name, const std::string& file_type);
+        get_categorization_from_db(const std::string& file_name, const FileType file_type);
 
 private:
     std::map<std::string, std::string> cached_results;

@@ -6,6 +6,7 @@
 #include <locale.h>
 #include <libintl.h>
 #include <iostream>
+#include <X11/Xlib.h>
 extern GResource *resources_get_resource();
 
 
@@ -23,6 +24,7 @@ bool initialize_loggers()
 
 int main(int argc, char **argv)
 {
+    XInitThreads();
     if (!initialize_loggers()) {
         return EXIT_FAILURE;
     }
@@ -31,6 +33,8 @@ int main(int argc, char **argv)
         _putenv("GSETTINGS_SCHEMA_DIR=schemas");
     #endif
 
+    MainApp* app;
+
     try {
         g_resources_register(resources_get_resource());
         EmbeddedEnv env_loader("/net/quicknode/AIFileSorter/.env");
@@ -38,9 +42,12 @@ int main(int argc, char **argv)
         setlocale(LC_ALL, "");
         std::string locale_path = Utils::get_executable_path() + "/locale";
         bindtextdomain("net.quicknode.AIFileSorter", locale_path.c_str());
-        MainApp app(argc, argv);
-        app.run();
+        app = new MainApp(argc, argv);
+        app->run();
+        app->shutdown();
+        delete app;
     } catch (const std::exception& ex) {
+        delete app;
         g_critical("Error: %s", ex.what());
         return EXIT_FAILURE;
     }

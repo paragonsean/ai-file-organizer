@@ -1,4 +1,5 @@
 #include "LLMClient.hpp"
+#include "Types.hpp"
 #include "Utils.hpp"
 #include <curl/curl.h>
 #include <glib.h>
@@ -92,7 +93,7 @@ std::string LLMClient::send_api_request(std::string json_payload) {
 }
 
 
-std::string LLMClient::categorize_file(const std::string& file_name, const std::string& file_type)
+std::string LLMClient::categorize_file(const std::string& file_name, FileType file_type)
 {
     std::string json_payload = make_payload(file_name, file_type);
 
@@ -100,15 +101,15 @@ std::string LLMClient::categorize_file(const std::string& file_name, const std::
 }
 
 
-std::string LLMClient::make_payload(const std::string& file_name, const std::string& file_type)
+std::string LLMClient::make_payload(const std::string& file_name, const FileType file_type)
 {
     std::string prompt;
 
-    if (file_type == "F") {
-        g_print("File name: %s\n", file_name.c_str());
+    if (file_type == FileType::File) {
+        // g_print("File name: %s\n", file_name.c_str());
         prompt = "Categorize file: " + file_name;
     } else {
-        g_print("Directory name: %s\n", file_name.c_str());
+        // g_print("Directory name: %s\n", file_name.c_str());
         prompt = "Categorize directory: " + file_name;
     }
 

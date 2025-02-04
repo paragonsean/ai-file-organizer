@@ -10,7 +10,7 @@ public:
 
     bool is_dialog_valid() const;
     void show();
-    void show_results(const std::vector<std::tuple<std::string, std::string, std::string, std::string, std::string>>& categorized_files);
+    void show_results(const std::vector<CategorizedFile>& categorized_files);
     void on_confirm_and_sort_button_clicked();
 
 private:
@@ -23,7 +23,7 @@ private:
     GtkBuilder *builder;
     const char* categorization_db;
     DatabaseManager* db_manager;
-    std::vector<std::tuple<std::string, std::string, std::string,  std::string, std::string>> categorized_files;
+    std::vector<CategorizedFile> categorized_files;
     GtkTreeViewColumn* subcategory_column;
     gboolean show_subcategory_col;
 

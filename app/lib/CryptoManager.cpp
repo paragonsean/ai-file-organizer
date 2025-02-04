@@ -5,28 +5,25 @@
 #include <string.h>
 #include <openssl/bio.h>
 #include <openssl/evp.h>
+#include <iostream>
 
-
-std::string CryptoManager::embedded_pc = "replace-with-your-obfuscated-key-part2-value";
 
 CryptoManager::CryptoManager(const std::string& env_pc, const std::string& env_rr)
     : env_pc(env_pc), env_rr(env_rr) {}
 
-
 std::string CryptoManager::reconstruct()
 {
     std::string kp_1 = deobfuscate(env_pc);
-    std::string kp_2 = deobfuscate(embedded_pc);
+    std::string kp_2 = deobfuscate(std::string(CryptoManager::embedded_pc));
     std::string recomposed_key = reassemble_key(kp_1, kp_2);
     std::string k = aes256_decrypt(Utils::hex_to_vector(env_rr), recomposed_key);
 
     return k;
 }
 
-
 std::string CryptoManager::reassemble_key(const std::string& part1, const std::string& part2)
 {
-    return part1 + part2;
+    return part2 + part1;
 }
 
 
@@ -111,18 +108,15 @@ std::string CryptoManager::aes256_decrypt(const std::vector<unsigned char>& ciph
     }
 
     try {
-        // Initialize decryption operation
         if (EVP_DecryptInit_ex(ctx, EVP_aes_256_cbc(), nullptr, (unsigned char*)key.data(), iv) != 1) {
             throw std::runtime_error("Decryption initialization failed.");
         }
 
-        // Decrypt the ciphertext
         if (EVP_DecryptUpdate(ctx, plaintext.data(), &len, ciphertext.data() + sizeof(iv), ciphertext.size() - sizeof(iv)) != 1) {
             throw std::runtime_error("Decryption failed.");
         }
         plaintext_len += len;
 
-        // Finalize decryption
         if (EVP_DecryptFinal_ex(ctx, plaintext.data() + len, &len) != 1) {
             throw std::runtime_error("Final decryption step failed.");
         }

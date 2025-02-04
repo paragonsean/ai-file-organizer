@@ -11,7 +11,7 @@ public:
     std::string reconstruct();
 
 private:
-    static std::string embedded_pc;
+    static constexpr char embedded_pc[] = "insert-obfuscated-Key-part-1-here";
     std::string env_pc;
     std::string env_rr;
     std::string reassemble_key(const std::string &part1, const std::string &part2);

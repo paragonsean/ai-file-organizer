@@ -79,7 +79,7 @@ void MainAppHelpActions::show_about(GtkWindow *parent)
     // Add brand name and links
     GtkWidget *author_details = gtk_label_new(NULL);
     const gchar *author_text = "Author's brand name is <a href=\"https://quicknode.net\">QN (QuickNode)</a>.\n"
-                               "Author's Github is <a href=\"https://github.com/hyperfield\">here.</a>";
+                               "Source code on Github is <a href=\"https://github.com/hyperfield/ai-file-sorter\">here.</a>";
     gtk_label_set_markup(GTK_LABEL(author_details), author_text);
     gtk_label_set_line_wrap(GTK_LABEL(author_details), TRUE);
     gtk_box_pack_start(GTK_BOX(credits_tab_content), author_details, FALSE, FALSE, 5);

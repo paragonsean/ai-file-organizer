@@ -136,7 +136,8 @@ endif
 # Compiler and flags
 CXX = g++
 CXXFLAGS += -std=c++20 -Wall $(shell pkg-config --cflags gtkmm-3.0)
-LDFLAGS += $(shell pkg-config --libs gtkmm-3.0) -lcurl -ljsoncpp -lsqlite3 -lcrypto -lfmt -lspdlog -lssl
+# CXXFLAGS += -fsanitize=address -g			# For debugging memory leaks
+LDFLAGS += $(shell pkg-config --libs gtkmm-3.0) -lcurl -ljsoncpp -lsqlite3 -lcrypto -lfmt -lspdlog -lssl -lX11 -lfontconfig
 INCLUDE_DIRS = -I./include
 
 # Directories
@@ -153,7 +154,7 @@ OBJS = $(patsubst %.cpp, $(OBJ_DIR)/%.o, $(notdir $(SRCS)))
 
 # Main rules
 all: $(TARGET)
-	@echo "Building for $(PLATFORM)"
+	@echo "Finished building AI File Sorter for $(PLATFORM)"
 
 $(TARGET): $(OBJS)
 	mkdir -p $(BIN_DIR)

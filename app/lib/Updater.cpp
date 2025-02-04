@@ -204,7 +204,6 @@ void Updater::display_update_dialog(bool is_required) {
 
             gtk_widget_destroy(dialog);
 
-            // Exit the app only for required updates
             if (is_required) {
                 exit(EXIT_SUCCESS);
             }

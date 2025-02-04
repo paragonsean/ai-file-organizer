@@ -131,10 +131,5 @@ CategorizationProgressDialog::~CategorizationProgressDialog()
         m_TextView = nullptr;
     }
 
-    if (buffer) {
-        g_object_unref(buffer);
-        buffer = nullptr;
-    }
-
     m_StopButton = nullptr;
 }

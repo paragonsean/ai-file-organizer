@@ -1,5 +1,6 @@
 #include "MainApp.hpp"
 #include "CategorizationSession.hpp"
+#include "CryptoManager.hpp"
 #include "ErrorMessages.hpp"
 #include "FileScanner.hpp"
 #include "LLMClient.hpp"
@@ -8,14 +9,12 @@
 #include "MainAppHelpActions.hpp"
 #include "Updater.hpp"
 #include "Utils.hpp"
+#include "Types.hpp"
 
+#include <chrono>
 #include <filesystem>
 #include <future>
-#include <chrono>
 #include <iostream>
-#include <string>
-#include <vector>
-#include <thread>
 #include <gtk/gtk.h>
 #include <gtk/gtkfilechooser.h>
 #include <gtk/gtkwidget.h>
@@ -27,8 +26,11 @@
 #include <gtkmm/treeview.h>
 #include <gtkmm/liststore.h>
 #include <glibmm/fileutils.h>
-#include <gio/gio.h>
-#include <CryptoManager.hpp>
+#include <string>
+#include <thread>
+#include <unordered_set>
+#include <vector>
+
 extern GResource *resources_get_resource();
 
 
@@ -41,7 +43,8 @@ MainApp::MainApp(int argc, char **argv)
       categorize_files_checkbox(nullptr), 
       categorize_directories_checkbox(nullptr),
       core_logger(Logger::get_logger("core_logger")),
-      ui_logger(Logger::get_logger("ui_logger"))
+      ui_logger(Logger::get_logger("ui_logger")),
+      file_scan_options(FileScanOptions::None)
 {
     stop_analysis = false;
 
@@ -100,11 +103,16 @@ void MainApp::initialize_checkboxes() {
         return;
     }
 
-    this->analyze_files = gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(categorize_files_checkbox));
-    this->analyze_directories = gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(categorize_directories_checkbox));
+    if (gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(categorize_files_checkbox))) {
+        file_scan_options = file_scan_options | FileScanOptions::Files;
+    }
 
-    CheckboxData *data_for_files = new CheckboxData{this, categorize_directories_checkbox};
-    CheckboxData *data_for_directories = new CheckboxData{this, categorize_files_checkbox};
+    if (gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(categorize_directories_checkbox))) {
+        file_scan_options = file_scan_options | FileScanOptions::Directories;
+    }
+
+    data_for_files = new CheckboxData{this, categorize_directories_checkbox};
+    data_for_directories = new CheckboxData{this, categorize_files_checkbox};
 
     g_signal_connect(categorize_files_checkbox, "toggled", G_CALLBACK(MainApp::on_checkbox_toggled), data_for_files);
     g_signal_connect(categorize_directories_checkbox, "toggled", G_CALLBACK(MainApp::on_checkbox_toggled), data_for_directories);
@@ -148,34 +156,54 @@ void MainApp::on_checkbox_toggled(GtkCheckButton* checkbox, gpointer user_data)
     MainApp* app = data->app;
     GtkCheckButton* other_checkbox = data->other_checkbox;
 
-    bool checkbox_active = gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(checkbox));
-    bool other_checkbox_active = gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(other_checkbox));
+    app->ensure_one_checkbox(checkbox, other_checkbox);
 
-    // Ensure at least one checkbox is active
-    if (!checkbox_active && !other_checkbox_active) {
+    FileScanOptions option = (checkbox == app->categorize_files_checkbox)
+                             ? FileScanOptions::Files : FileScanOptions::Directories;
+
+    app->update_file_scan_options(option, gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(checkbox)));
+    app->update_checkbox_settings(checkbox);
+}
+
+
+void MainApp::ensure_one_checkbox(GtkCheckButton* checkbox, GtkCheckButton* other_checkbox)
+{
+    bool is_checkbox_active = gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(checkbox));
+    bool is_other_checkbox_active = gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(other_checkbox));
+
+    if (!is_checkbox_active && !is_other_checkbox_active) {
         gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(other_checkbox), TRUE);
-        other_checkbox_active = true;
-    }
-
-    if (checkbox == app->categorize_files_checkbox) {
-        app->analyze_files = checkbox_active;
-        app->settings.set_categorize_files(checkbox_active);
-    } else {
-        app->analyze_directories = checkbox_active;
-        app->settings.set_categorize_directories(checkbox_active);
     }
 }
 
 
-std::vector<std::string> extract_file_names(
-    const std::vector<std::tuple<std::string, std::string,
-                      std::string, std::string, std::string>>& categorized_files)
+void MainApp::update_file_scan_options(FileScanOptions option, bool is_active)
 {
-    std::vector<std::string> file_names;
-    for (const auto& [file_path, file_name, file_type, cat1, cat2] : categorized_files) {
-        file_names.push_back(file_name);
+    if (is_active) {
+        file_scan_options = file_scan_options | option;
+    } else {
+        file_scan_options = file_scan_options & ~option;
     }
+}
 
+
+void MainApp::update_checkbox_settings(GtkCheckButton* checkbox)
+{
+    if (checkbox == categorize_files_checkbox) {
+        settings.set_categorize_files(gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(checkbox)));
+    } else {
+        settings.set_categorize_directories(gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(checkbox)));
+    }
+}
+
+
+std::unordered_set<std::string> MainApp::extract_file_names(
+    const std::vector<CategorizedFile>& categorized_files)
+{
+    std::unordered_set<std::string> file_names;
+    for (const auto& [file_path, file_name, file_type, category, subcategory] : categorized_files) {
+        file_names.insert(file_name);
+    }
     return file_names;
 }
 
@@ -265,33 +293,29 @@ void MainApp::perform_analysis()
         }
 
         for (const auto& file_entry : already_categorized_files) {
-            auto file_name = std::get<1>(file_entry);
-            auto file_type = std::get<2>(file_entry);
-            auto file_category = std::get<3>(file_entry);
-            auto file_subcategory = std::get<4>(file_entry);
-            auto* context = new AnalysisContext(this, file_name,
-                                                file_type,
-                                                file_category,
-                                                file_subcategory);
+            auto context = std::make_unique<AnalysisContext>(
+                                                                this,
+                                                                file_entry.file_name,
+                                                                file_entry.type,
+                                                                file_entry.category,
+                                                                file_entry.subcategory
+                                                            );
 
             g_idle_add([](gpointer user_data) -> gboolean {
-                auto* ctx = static_cast<AnalysisContext*>(user_data);
-                ctx->app->progress_dialog->append_text(
-                        ctx->file_name + " [" + ctx->category
-                            + "/" + ctx->subcategory
-                                + "]\n");
-                delete ctx;
+                auto ctx = std::unique_ptr<AnalysisContext>(static_cast<AnalysisContext*>(user_data));
+                ctx->app->progress_dialog->append_text(ctx->file_name + " [" + ctx->category + "/" + ctx->subcategory + "]\n");
                 return G_SOURCE_REMOVE;
-            }, context);
+            }, context.release());
         }
 
-        std::vector<std::string> cached_file_names = extract_file_names(already_categorized_files);
+
+        std::unordered_set<std::string> cached_file_names = extract_file_names(already_categorized_files);
         
         if (stop_analysis) {
             return;
         }
 
-        this->files_to_categorize = find_files_to_categorize(directory_path, cached_file_names);
+        files_to_categorize = find_files_to_categorize(directory_path, cached_file_names);
 
         if (!files_to_categorize.empty()) {
             g_idle_add([](gpointer user_data) -> gboolean {
@@ -307,9 +331,14 @@ void MainApp::perform_analysis()
             }, this);
         }
 
-        for (const auto& file_entry : this->files_to_categorize) {
-            auto file_name = std::get<1>(file_entry);            
-            auto* context = new AnalysisContext(this, file_name, "", "", "");
+        for (const auto& file_entry : files_to_categorize) {
+            auto* context = new AnalysisContext(
+                                                this,
+                                                file_entry.file_name,
+                                                file_entry.type,
+                                                "",  // No category
+                                                ""   // No subcategory
+                                                );
 
             g_idle_add([](gpointer user_data) -> gboolean {
                 auto* ctx = static_cast<AnalysisContext*>(user_data);
@@ -344,7 +373,7 @@ void MainApp::perform_analysis()
 
             if (app->progress_dialog) {
                 app->progress_dialog->hide();
-                delete app->progress_dialog; // Clean up
+                delete app->progress_dialog;
                 app->progress_dialog = nullptr;
             }
 
@@ -357,17 +386,18 @@ void MainApp::perform_analysis()
 }
 
 
-std::vector<std::tuple<std::string, std::string, std::string>>
+std::vector<FileEntry>
 MainApp::get_actual_files(const std::string& directory_path)
 {
-    g_print("Getting actual files from directory %s", directory_path.c_str());
-    std::vector<std::tuple<std::string, std::string, std::string>> actual_files =
-        dirscanner.scan_directory(directory_path, this->analyze_files, this->analyze_directories);
+    core_logger->info("Getting actual files from directory %s", directory_path.c_str());
+
+    std::vector<FileEntry> actual_files =
+        dirscanner.get_directory_entries(directory_path, FileScanOptions::Files | FileScanOptions::Directories);
     
-    g_print("Actual files found: %d\n", static_cast<int>(actual_files.size()));
+    core_logger->info("Actual files found: %d\n", static_cast<int>(actual_files.size()));
 
     for (const auto& [full_file_path, file_name, file_type] : actual_files) {
-        g_print("File: %s, Path: %s\n", file_name.c_str(), full_file_path.c_str());
+        core_logger->info("File: %s, Path: %s\n", file_name.c_str(), full_file_path.c_str());
     }
 
     return actual_files;
@@ -414,23 +444,23 @@ void MainApp::on_analyze_button_clicked(GtkButton *button, gpointer main_app_ins
         try {
             app->perform_analysis();
         } catch (const std::exception &ex) {
-            g_printerr("Exception during analysis: %s\n", ex.what());
+            app->core_logger->error("Exception during analysis: %s\n", ex.what());
         }
     });
 }
 
 
-std::vector<std::tuple<std::string, std::string, std::string>>
+std::vector<FileEntry>
 MainApp::find_files_to_categorize(const std::string& directory_path,
-                                  const std::vector<std::string>& cached_files)
+                                  const std::unordered_set<std::string>& cached_files)
 {
-    std::vector<std::tuple<std::string, std::string, std::string>> actual_files =
-        dirscanner.scan_directory(directory_path, analyze_files, analyze_directories);
-    std::vector<std::tuple<std::string, std::string, std::string>> found_files;
+    std::vector<FileEntry> actual_files =
+        dirscanner.get_directory_entries(directory_path, file_scan_options);
+    std::vector<FileEntry> found_files;
 
     for (const auto &[full_file_path, file_name, file_type] : actual_files) {
-        if (std::find(cached_files.begin(), cached_files.end(), file_name) == cached_files.end()) {
-            found_files.push_back(std::make_tuple(full_file_path, file_name, file_type));
+        if (!cached_files.contains(file_name)) {
+            found_files.push_back({full_file_path, file_name, file_type});
         }
     }
 
@@ -438,23 +468,22 @@ MainApp::find_files_to_categorize(const std::string& directory_path,
 }
 
 
-std::vector<std::tuple<std::string, std::string, std::string, std::string, std::string>> 
-MainApp::compute_files_to_sort()
+std::vector<CategorizedFile> MainApp::compute_files_to_sort()
 {
-    std::vector<std::tuple<std::string, std::string, std::string, std::string, std::string>> files_to_sort;
+    std::vector<CategorizedFile> files_to_sort;
     
     // Get current files in the directory (full path and name)
-    std::vector<std::tuple<std::string, std::string, std::string>>
-        actual_files = dirscanner.scan_directory(
-            get_folder_path(), this->analyze_files, this->analyze_directories);
+    std::vector<FileEntry> actual_files = dirscanner.get_directory_entries(
+                                              get_folder_path(), file_scan_options
+                                              );
     
     for (const auto &[full_file_path, file_name, file_type] : actual_files) {
         // Search for each file in already_categorized_files to get its category data
         auto it = std::find_if(
             already_categorized_files.begin(), 
             already_categorized_files.end(),
-            [&file_name, &file_type](const auto& categorized_file) {
-                return std::get<1>(categorized_file) == file_name && std::get<2>(categorized_file) == file_type;
+            [&file_name, &file_type](const CategorizedFile& categorized_file) {
+                return categorized_file.file_name == file_name && categorized_file.type == file_type;
             }
         );
 
@@ -494,40 +523,53 @@ std::tuple<std::string, std::string> split_category_subcategory(const std::strin
 }
 
 
-std::vector<std::tuple<std::string, std::string, std::string, std::string, std::string>> 
-MainApp::categorize_files(const std::vector<std::tuple<std::string, std::string, std::string>>& items)
+std::vector<CategorizedFile> 
+MainApp::categorize_files(const std::vector<FileEntry>& items)
 {
     CategorizationSession categorization_session;
     LLMClient llm = categorization_session.create_llm_client();
 
-    std::vector<std::tuple<std::string, std::string, std::string, std::string, std::string>> categorized_items;
+    std::vector<CategorizedFile> categorized_items;
 
     for (const auto &[full_path, name, type] : items) {
         if (stop_analysis) {
-            g_print("Stopping categorization...\n");
-            break;
+            core_logger->info("Stopping categorization...\n");
+            return categorized_items;
         }
 
         try {
-            std::string dir_path = std::filesystem::path(full_path).parent_path().string();
+            const std::string& dir_path = std::filesystem::path(full_path).parent_path().string();
             
             auto report_progress = [this](const std::string& message) {
+                auto progress_data = std::make_unique<std::pair<MainApp*, std::string>>(this, message);
+
                 g_idle_add([](gpointer user_data) -> gboolean {
-                    auto* data = static_cast<std::pair<MainApp*, std::string>*>(user_data);
-                    MainApp* app = data->first;
-                    const std::string& msg = data->second;
-                    app->progress_dialog->append_text(msg + "\n");
-                    delete data;
+                    auto progress_data = std::unique_ptr<std::pair<MainApp*, std::string>>(
+                        static_cast<std::pair<MainApp*, std::string>*>(user_data)
+                    );
+
+                    if (progress_data->first->progress_dialog) {
+                        progress_data->first->progress_dialog->append_text(progress_data->second + "\n");
+                    }
+
                     return G_SOURCE_REMOVE;
-                }, new std::pair<MainApp*, std::string>(this, message));
+                }, progress_data.release());
             };
 
-            auto [category, subcategory] = categorize_file(llm, name, type == "D" ? "D" : "F", report_progress);
-            categorized_items.push_back(std::make_tuple(dir_path, name, type, category, subcategory));
+            auto [category, subcategory] = categorize_file(llm, name, type, report_progress);
+
+            categorized_items.emplace_back(CategorizedFile{
+                                                dir_path,
+                                                name,
+                                                type,
+                                                category,
+                                                subcategory
+                                            });
+
         } catch (const std::exception& ex) {
             std::string error_message = "Error categorizing file \"" + name + "\": " + ex.what();
             show_error_dialog(error_message);
-            g_printerr("%s\n", error_message.c_str());
+            core_logger->error("%s\n", error_message.c_str());
             break;
         }
     }
@@ -537,11 +579,21 @@ MainApp::categorize_files(const std::vector<std::tuple<std::string, std::string,
 
 
 std::string MainApp::categorize_with_timeout(LLMClient& llm, const std::string& item_name,
-                                    const std::string& file_type, int timeout_seconds) {
-    auto future = std::async(std::launch::async, [&llm, &item_name, &file_type]() {
-        return llm.categorize_file(item_name, file_type);
-    });
+                                             const FileType file_type, int timeout_seconds)
+{
+    std::promise<std::string> promise;
+    std::future<std::string> future = promise.get_future();
 
+    std::thread([&llm, promise = std::move(promise), item_name, file_type]() mutable {
+        try {
+            std::string result = llm.categorize_file(item_name, file_type);
+            promise.set_value(result);
+        } catch (const std::exception& e) {
+            promise.set_exception(std::current_exception());
+        }
+    }).detach();
+
+    // Wait for result
     if (future.wait_for(std::chrono::seconds(timeout_seconds)) == std::future_status::ready) {
         return future.get();
     } else {
@@ -552,15 +604,15 @@ std::string MainApp::categorize_with_timeout(LLMClient& llm, const std::string& 
 
 std::tuple<std::string, std::string>
 MainApp::categorize_file(LLMClient& llm, const std::string& item_name,
-                         const std::string& file_type,
+                         const FileType file_type,
                          const std::function<void(const std::string&)>& report_progress)
 {
     // Check the local database with the item name and type
     auto categorization = db_manager.get_categorization_from_db(item_name, file_type);
-    if (!categorization.empty()) {
+    if (categorization.size() >= 2) {
         std::string category = categorization[0];
         std::string subcategory = categorization[1];
-        // g_print("Found in local DB: %s - Category: %s, Subcategory: %s\n", item_name.c_str(), category.c_str(), subcategory.c_str());
+        core_logger->info("Found in local DB: %s - Category: %s, Subcategory: %s\n", item_name.c_str(), category.c_str(), subcategory.c_str());
         std::string message = 
             "\nFound in local DB: " + item_name + " [" + category + "/" + subcategory + "]";
         report_progress(message);
@@ -575,21 +627,29 @@ MainApp::categorize_file(LLMClient& llm, const std::string& item_name,
         CryptoManager crypto(env_pc, env_rr);
         key = crypto.reconstruct();
     } catch (const std::exception& ex) {
-        std::ostringstream message;
-        message << "Error encountered during categorization of \"" << item_name
-                << "\": " << ex.what();
-        report_progress(message.str());
-        g_printerr("%s\n", message.str().c_str());
-        throw;
+        std::string message = "CryptoManager error for \"" + item_name + "\": " + ex.what();
+        report_progress(message);
+        g_printerr("%s\n", message.c_str());
+        return std::make_tuple("", "");
     }
 
     try {
-        std::string category_subcategory = categorize_with_timeout(llm, item_name, file_type, 10);
+        std::string category_subcategory;
+        try {
+            category_subcategory = categorize_with_timeout(llm, item_name, file_type, 10);
+        } catch (const std::exception& ex) {
+            std::string message = "LLM Timeout/Error: " + std::string(ex.what());
+            report_progress(message);
+            g_printerr("%s\n", message.c_str());
+            return std::make_tuple("", "");
+        }
+
         auto [category, subcategory] = split_category_subcategory(category_subcategory);
 
         std::ostringstream message;
         message << "Suggested by AI: " << item_name << " [" << category << "/" << subcategory << "]";
         report_progress(message.str());
+
         return std::make_tuple(category, subcategory);
     } catch (const std::exception& ex) {
         std::ostringstream message;
@@ -601,8 +661,7 @@ MainApp::categorize_file(LLMClient& llm, const std::string& item_name,
 }
 
 
-void MainApp::show_results_dialog(const std::vector<std::tuple<std::string, std::string, 
-                                  std::string, std::string, std::string>>& results)
+void MainApp::show_results_dialog(const std::vector<CategorizedFile>& results)
 {
     try {
         delete categorization_dialog;
@@ -610,7 +669,7 @@ void MainApp::show_results_dialog(const std::vector<std::tuple<std::string, std:
         categorization_dialog = new CategorizationDialog(&db_manager, show_subcategory_col);
         this->categorization_dialog->show_results(results);
     } catch (const std::runtime_error &ex) {
-        g_printerr("Error: %s\n", ex.what());;
+        ui_logger->error("Error: %s\n", ex.what());;
     }
 }
 
@@ -776,11 +835,18 @@ void MainApp::set_app_icon()
 {
     GError *error = NULL;
     GdkPixbuf *pixbuf_icon = gdk_pixbuf_new_from_resource("/net/quicknode/AIFileSorter/images/app_icon_128.png", &error);
+    
     if (!pixbuf_icon) {
         ui_logger->critical("Failed to load the app icon resource: %s", error->message);
         g_clear_error(&error);
     } else {
         gtk_window_set_icon(GTK_WINDOW(main_window), pixbuf_icon);
+
+        // Debugging: Check the reference count before unref
+        g_object_ref(pixbuf_icon);  // Increase ref count to check
+        gsize ref_count = G_OBJECT(pixbuf_icon)->ref_count;
+        ui_logger->debug("Pixbuf ref count before unref: %zu", ref_count);
+
         g_object_unref(pixbuf_icon);
     }
 }
@@ -915,12 +981,32 @@ void MainApp::run()
 }
 
 
-MainApp::~MainApp()
-{
+void MainApp::shutdown() {
     if (analyze_thread.joinable()) {
         stop_analysis = true;
         analyze_thread.join();
     }
+
+    g_signal_handlers_disconnect_by_data(categorize_files_checkbox, this);
+    g_signal_handlers_disconnect_by_data(categorize_directories_checkbox, this);
+
     delete categorization_dialog;
-    g_object_unref(builder);
+    delete data_for_files;
+    delete data_for_directories;
+
+    if (categorize_files_checkbox) {
+        g_object_unref(categorize_files_checkbox);
+        categorize_files_checkbox = nullptr;
+    }
+    
+    if (categorize_directories_checkbox) {
+        g_object_unref(categorize_directories_checkbox);
+        categorize_directories_checkbox = nullptr;
+    }
+}
+
+
+MainApp::~MainApp()
+{
+    // FcFini();
 }
