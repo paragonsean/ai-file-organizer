@@ -6,7 +6,7 @@
 #include <locale.h>
 #include <libintl.h>
 #include <iostream>
-#include <X11/Xlib.h>
+// #include <X11/Xlib.h>
 extern GResource *resources_get_resource();
 
 
@@ -24,7 +24,7 @@ bool initialize_loggers()
 
 int main(int argc, char **argv)
 {
-    XInitThreads();
+    // XInitThreads();
     if (!initialize_loggers()) {
         return EXIT_FAILURE;
     }
