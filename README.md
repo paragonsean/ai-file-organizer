@@ -87,7 +87,7 @@ pacman -S --needed mingw-w64-x86_64-gtk3 mingw-w64-x86_64-gdk-pixbuf2 mingw-w64-
 
 6. Go to `app/resources` and run `./compile-resources.sh`. Go back to the `app` directory.
 
-7. Run `make`, `make install` and `make clean`. The executable `aifilesorter.exe` will be located in `C:\Program Files\AIFileSorter`. You can add the directory to `%PATH%`.
+7. Run `make`, `make install` and `make clean`. The executable `AiFileSorter.exe` will be located in `C:\Program Files\AiFileSorter`. You can add the directory to `%PATH%`.
 
 ---
 
