@@ -45,7 +45,7 @@ void MainAppHelpActions::show_about(GtkWindow *parent)
     std::string version_text = "Version: " + APP_VERSION.to_string();
     GtkWidget *version = gtk_label_new(version_text.c_str());
 
-    GtkWidget *copyright = gtk_label_new("© 2024 QuickNode. All rights reserved.");
+    GtkWidget *copyright = gtk_label_new("© 2024-2025 QuickNode. All rights reserved.");
     GtkWidget *website = gtk_link_button_new_with_label("https://www.filesorter.app", "Visit the Website");
 
     gtk_box_pack_start(GTK_BOX(about_tab_content), program_name, FALSE, FALSE, 5);
