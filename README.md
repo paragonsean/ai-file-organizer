@@ -164,7 +164,11 @@ Before compiling the app:
 
 2. Generate a 32-character random secret key, e.g., using [this tool](https://passwords-generator.org/32-character).
 
-3. Navigate to the `api-key-encryption` folder and edit the `encryption.ini` as follows:
+    **Important**: If you're compiling on Windows, make sure there is NO `=` in the generated key! If one or more `=` are there, regenerate the key!
+
+    Your secret key could look something like `du)]--Wg#+Au89Ro6eRMJc"]qx~owL_X`.
+
+3. Navigate to the `api-key-encryption` folder, then make a file named `encryption.ini` with the following content:
 
     ```
     LLM_API_KEY=sk-...

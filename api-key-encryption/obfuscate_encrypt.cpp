@@ -2,6 +2,17 @@
 #include <stddef.h>
 #include <string>
 #include <cstring>
+
+#ifdef _WIN32
+#include <cstdlib>
+
+// Need setenv() before including dotenv.h on Windows
+int setenv(const char *name, const char *value, int overwrite) {
+    if (!overwrite && getenv(name)) return 0;
+    return _putenv_s(name, value);
+}
+#endif
+
 #include "../app/include/external/dotenv.h"
 #include <stdexcept>
 #include <iostream>
