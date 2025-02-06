@@ -56,7 +56,7 @@ OBJS = $(patsubst %.cpp, $(OBJ_DIR)/%.o, $(notdir $(SRCS)))
 
 # Main rules
 all: $(TARGET)
-	@echo "Finished building AI File Sorter for $(PLATFORM)"
+	@printf "\nFinished building AI File Sorter for %s\n" "$(PLATFORM)"
 
 $(TARGET): $(OBJS) $(RC_OBJ)
 	mkdir -p $(BIN_DIR)
