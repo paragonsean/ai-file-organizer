@@ -39,7 +39,7 @@ FileScanner::get_directory_entries(const std::string &directory_path,
 
 bool FileScanner::is_file_hidden(const fs::path &path) {
     #ifdef _WIN32
-    DWORD attrs = GetFileAttributes(path.c_str());
+    DWORD attrs = GetFileAttributesW(path.c_str());
     return (attrs != INVALID_FILE_ATTRIBUTES) && (attrs & FILE_ATTRIBUTE_HIDDEN);
     #endif
     return path.string().starts_with(".");
