@@ -165,8 +165,9 @@ Before compiling the app:
 2. Generate a 32-character random secret key, e.g., using [this tool](https://passwords-generator.org/32-character).
 
     **Important**: If you're compiling on Windows, make sure there is NO `=` in the generated key! If one or more `=` are there, regenerate the key!
+    **Important**: If you're compiling on Windows, it's probably best to avoid symbols due to possible unpredictable parsing issues.
 
-    Your secret key could look something like `du)]--Wg#+Au89Ro6eRMJc"]qx~owL_X`.
+    Your secret key could look something like `sVPV2fWoRg5q62AuCGVQ4p0NbHIU5DEv` or `du)]--Wg#+Au89Ro6eRMJc"]qx~owL_X`.
 
 3. Navigate to the `api-key-encryption` folder, then make a file named `encryption.ini` with the following content:
 
@@ -176,7 +177,7 @@ Before compiling the app:
     ```
 
 4. Run the `compile.sh` script in the same directory to generate the executable `obfuscate_encrypt`.
-
+ due 
 5. Execute `obfuscate_encrypt` to generate:
    - Obfuscated Key part 1
    - Obfuscated Key part 2
