@@ -3,6 +3,7 @@
 
 #include "Settings.hpp"
 #include "Version.hpp"
+#include <future>
 #include <optional>
 #include <string>
 
@@ -37,6 +38,7 @@ private:
     Settings& settings;
     const std::string update_spec_file_url;
     std::optional<UpdateInfo> update_info;
+    std::future<void> update_future;
     void check_updates();
     std::string fetch_update_metadata() const;
     Version string_to_Version(const std::string &version_str);

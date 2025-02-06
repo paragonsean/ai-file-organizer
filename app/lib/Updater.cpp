@@ -69,7 +69,7 @@ void Updater::check_updates()
         return;
     }
 
-    update_info = std::make_optional(info); // Store the update info in the class variable
+    update_info = std::make_optional(info);  // Store the update info
 }
 
 
@@ -82,21 +82,21 @@ bool Updater::is_update_available()
 
 bool Updater::is_update_required()
 {
-    return string_to_Version(update_info.value().min_version) > APP_VERSION;
+    return string_to_Version(update_info.value_or(UpdateInfo()).min_version) > APP_VERSION;
 }
 
 
 void Updater::begin()
 {
-    auto future = std::async(std::launch::async, [this]() {
+    this->update_future = std::async(std::launch::async, [this]() { 
         try {
             if (is_update_available()) {
                 Glib::signal_idle().connect_once([this]() {
                     if (is_update_required()) {
                         bool is_required = true;
-                        display_update_dialog(is_required); // Safe: runs on main thread
+                        display_update_dialog(is_required);
                     } else if (!is_update_skipped()) {
-                        display_update_dialog(); // Safe: runs on main thread
+                        display_update_dialog();
                     }
                 });
             } else {

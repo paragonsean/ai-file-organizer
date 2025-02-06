@@ -826,8 +826,8 @@ void MainApp::initialize_ui_components() {
 
 
 void MainApp::start_updater() {
-    Updater updater(settings);
-    updater.begin();
+    Updater* updater = new Updater(settings);
+    updater->begin();
 }
 
 
