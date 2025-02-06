@@ -241,7 +241,9 @@ Follow the steps in [How to Use](#how-to-use), but modify **step 2** as follows:
 - Curl: https://github.com/curl/curl
 - Gtk+3: https://gitlab.gnome.org/GNOME/gtk
 - Dotenv: https://github.com/motdotla/dotenv
+- git-scm: https://git-scm.com
 - JSONCPP: https://github.com/open-source-parsers/jsoncpp
+- MSYS2: https://www.msys2.org
 - OpenAI: https://platform.openai.com/docs/overview
 - OpenSSL: https://github.com/openssl/openssl
 - SoftPedia: https://www.softpedia.com/get/File-managers/AI-File-Sorter.shtml
