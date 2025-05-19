@@ -1,14 +1,8 @@
 # AI File Sorter
 
-[![Version](https://badgen.net/badge/version/0.8.3/green)](#) [![Donate via PayPal](https://badgen.net/badge/donate/PayPal/blue)](https://paypal.me/aifilesorter)
 
 AI File Sorter is a powerful, cross-platform desktop application that automates file organization. Featuring AI integration and a user-friendly GTK-based interface, it categorizes and sorts files and folders based on their names and extensions. The app intelligently assigns categories and, optionally, subcategories, which you can review and edit before confirming. Once approved, the necessary folders are created, and your files are sorted accordingly.
 
-[![Download ai-file-sorter](https://a.fsdn.com/con/app/sf-download-button)](https://sourceforge.net/projects/ai-file-sorter/files/latest/download)
-
-<a href="https://www.softpedia.com/get/File-managers/AI-File-Sorter.shtml" target="_blank">A review from Softpedia 🗗</a>
-
-![AI File Sorter Screenshot](screenshots/AI-File-Sorter_screenshot-1.png) ![AI File Sorter Screenshot](screenshots/AI-File-Sorter_screenshot-2.png) ![AI File Sorter Screenshot](screenshots/AI-File-Sorter_screenshot-3.png) ![AI File Sorter Screenshot](screenshots/AI-File-Sorter_screenshot-4.png)
 
 ---
 
@@ -253,18 +247,5 @@ Follow the steps in [How to Use](#how-to-use), but modify **step 2** as follows:
 ## License
 
 This project is licensed under the GNU AFFERO GENERAL PUBLIC LICENSE (GNU AGPL). See the [LICENSE](LICENSE) file for details.
-
----
-
-## Donation
-
-Support the development of **AI File Sorter** and its future features. Every contribution counts!
-
-- **[Donate via PayPal](https://paypal.me/aifilesorter)**
-- **Bitcoin**: 12H8VvRG9PGyHoBzbYxVGcu8PaLL6pc3NM
-- **Ethereum**: 0x09c6918160e2AA2b57BfD40BCF2A4BD61B38B2F9
-- **Tron**: TGPr8b5RxC5JEaZXkzeGVxq7hExEAi7Yaj
-
-USDT is also accepted in Ethereum and Tron chains.
 
 ---
