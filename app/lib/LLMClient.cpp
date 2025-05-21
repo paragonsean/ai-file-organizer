@@ -25,10 +25,25 @@ static size_t WriteCallback(void *contents, size_t size, size_t nmemb, std::stri
 }
 
 
+/**
+ * @brief Constructs an LLMClient object with a given API key.
+ * 
+ * @param api_key The API key to use for authenticating requests to the OpenAI API.
+ * 
+ */
 LLMClient::LLMClient(const std::string &api_key) : api_key(api_key)
 {}
 
 
+/**
+ * @brief Sends a POST request to the OpenAI API with a JSON payload.
+ * 
+ * @param json_payload The JSON payload to be sent in the request body.
+ * 
+ * @return The category string returned in the response body.
+ * 
+ * @exception std::runtime_error If there is an error with the request or the response.
+ */
 std::string LLMClient::send_api_request(std::string json_payload) {
     CURL *curl;
     CURLcode res;
@@ -93,6 +108,14 @@ std::string LLMClient::send_api_request(std::string json_payload) {
 }
 
 
+/**
+ * Sends a categorization request to the OpenAI API and returns the response as a category name.
+ *
+ * @param file_name The name of the file or directory to be categorized.
+ * @param file_type The type of file, either FileType::File or FileType::Directory.
+ *
+ * @return A string representing the category name assigned by the AI.
+ */
 std::string LLMClient::categorize_file(const std::string& file_name, FileType file_type)
 {
     std::string json_payload = make_payload(file_name, file_type);
@@ -101,6 +124,14 @@ std::string LLMClient::categorize_file(const std::string& file_name, FileType fi
 }
 
 
+/**
+ * Creates a JSON payload for sending a categorization request to the OpenAI API.
+ *
+ * @param file_name The name of the file or directory to be categorized.
+ * @param file_type The type of file, either FileType::File or FileType::Directory.
+ *
+ * @return A JSON string representing the payload to be sent to the API.
+ */
 std::string LLMClient::make_payload(const std::string& file_name, const FileType file_type)
 {
     std::string prompt;

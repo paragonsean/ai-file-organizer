@@ -6,6 +6,14 @@
 #include <filesystem>
 
 
+/**
+ * Returns the log directory path for the application.
+ *
+ * On Windows, this will return "%APPDATA%\AIFileSorter\logs".
+ * On Linux, this will return "$XDG_CACHE_HOME/AIFileSorter/logs".
+ *
+ * @return The log directory path.
+ */
 std::string Logger::get_log_directory()
 {
 #ifdef _WIN32
@@ -16,6 +24,16 @@ std::string Logger::get_log_directory()
 }
 
 
+/**
+ * Returns the value of the XDG_CACHE_HOME environment variable, or a default
+ * value if this variable is not set. The default value is $HOME/.cache/AIFileSorter/logs.
+ *
+ * This function will throw a std::runtime_error if neither XDG_CACHE_HOME nor
+ * HOME are set.
+ *
+ * @return The value of the XDG_CACHE_HOME environment variable, or a default
+ * value if this variable is not set.
+ */
 std::string Logger::get_xdg_cache_home()
 {
     const char* xdg_cache_home = std::getenv("XDG_CACHE_HOME");
@@ -31,6 +49,16 @@ std::string Logger::get_xdg_cache_home()
 }
 
 
+/**
+ * Returns the path to the log directory for the application on Windows.
+ *
+ * On Windows, this will return "%APPDATA%\AIFileSorter\logs".
+ *
+ * This function will throw a std::runtime_error if APPDATA environment variable
+ * is not set.
+ *
+ * @return The path to the log directory for the application on Windows.
+ */
 std::string Logger::get_windows_log_directory() {
     const char* appdata = std::getenv("APPDATA");
     if (appdata && *appdata) {
@@ -39,6 +67,19 @@ std::string Logger::get_windows_log_directory() {
     throw std::runtime_error("Failed to determine APPDATA environment variable.");
 }
 
+
+/**
+ * Configures and sets up the loggers for the application.
+ *
+ * This function creates a log directory if it doesn't already exist and sets up
+ * three separate loggers: core_logger, db_logger, and ui_logger. Each logger
+ * has both a console sink and a rotating file sink. The file sinks write log
+ * entries to core.log, db.log, and ui.log files, respectively, with a maximum
+ * file size of approximately 5 MB and at most 3 rotated files. All loggers are
+ * registered with the spdlog library and are set to log messages at the warning
+ * level or higher. The function logs an informational message once the loggers
+ * are initialized.
+ */
 
 void Logger::setup_loggers()
 {

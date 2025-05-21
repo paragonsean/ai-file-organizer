@@ -11,6 +11,14 @@
 #include <Types.hpp>
 
 
+/**
+ * @brief Constructor for the CategorizationDialog class.
+ * @param db_manager Pointer to an instance of DatabaseManager for database operations.
+ * @param show_subcategory_col Whether to show the subcategory column in the tree view.
+ *
+ * This constructor creates a new CategorizationDialog instance and sets up the UI from the Glade
+ * file. It also sets up the list store for the tree view and connects the necessary signals.
+ */
 CategorizationDialog::CategorizationDialog(DatabaseManager* db_manager, gboolean show_subcategory_col)
     : db_manager(db_manager), show_subcategory_col(show_subcategory_col)
 {
@@ -87,10 +95,29 @@ CategorizationDialog::CategorizationDialog(DatabaseManager* db_manager, gboolean
 }
 
 
+/**
+ * @brief Checks if the dialog is valid.
+ * @return true if the dialog is valid, false otherwise.
+ *
+ * The dialog is considered valid if it is not a null pointer and
+ * if it is a valid GtkDialog widget.
+ *
+ * @since 0.1.0
+ */
 bool CategorizationDialog::is_dialog_valid() const {
     return dialog && GTK_IS_DIALOG(dialog);
 }
 
+
+/**
+ * @brief Sets up the close button for the dialog.
+ *
+ * This function creates a "Close" button, assigns it a name, and adds it to the
+ * button box within the dialog. It also connects a signal to the button so that
+ * when clicked, the dialog will be destroyed.
+ *
+ * The button is made visible after being added to the container.
+ */
 
 void CategorizationDialog::setup_close_button() {
     close_button = GTK_BUTTON(gtk_button_new_with_label("Close"));
@@ -108,6 +135,24 @@ void CategorizationDialog::setup_close_button() {
     }), dialog);
 }
 
+
+/**
+ * @brief Sets up the columns for the tree view in the categorization dialog.
+ *
+ * This function configures the tree view columns by first removing any existing columns
+ * and then adding new ones with specific attributes. The columns include:
+ * - File Name: Text column that displays the file name.
+ * - File Type (Hidden): Text column that stores the file type but is not visible.
+ * - File Type Icon: Icon column that shows the file type icon.
+ * - Category: Editable text column for file categories.
+ * - Subcategory: Editable text column for file subcategories, visibility controlled by a flag.
+ * - Sorted Status Icon: Icon column indicating whether a file is sorted.
+ *
+ * It detaches the model while making changes to the columns and reattaches it afterward.
+ * The function also connects signals to the editable text columns to handle editing events.
+ *
+ * @throws std::runtime_error if the dialog or tree view is not initialized.
+ */
 
 void CategorizationDialog::setup_treeview_columns()
 {
@@ -187,6 +232,13 @@ void CategorizationDialog::setup_treeview_columns()
 }
 
 
+/**
+ * @brief Handles the "Continue Later" button click event.
+ *
+ * This function records the current categorization data to the database
+ * and then destroys the dialog widget, effectively closing the dialog.
+ */
+
 void CategorizationDialog::on_continue_later_button_clicked()
 {
     record_categorization_to_db();
@@ -194,12 +246,38 @@ void CategorizationDialog::on_continue_later_button_clicked()
 }
 
 
+/**
+ * @brief Handles the dialog close event.
+ *
+ * This function is called when the dialog is being closed. It ensures
+ * that the current categorization data is recorded to the database
+ * before the dialog is closed.
+ *
+ * @param widget The GtkWidget pointer representing the dialog.
+ * @param event The GdkEvent pointer associated with the dialog close action.
+ * @param user_data A gpointer to user data; can be used to pass additional data to the callback.
+ *
+ * @return FALSE to indicate that the event should be handled further by other event handlers.
+ */
+
 gboolean CategorizationDialog::on_dialog_close(GtkWidget *widget, GdkEvent *event, gpointer user_data) {
     record_categorization_to_db();
     return FALSE;
 }
 
 
+/**
+ * @brief Displays the categorization dialog with the given categorized files.
+ *
+ * This function will display the categorization dialog with the given categorized files.
+ * The dialog will contain a tree view with columns for the file name, file type, icon,
+ * category, subcategory, and sorted status icon. The user can then edit the category and
+ * subcategory columns to change the categorization of the files. After the user has
+ * finished editing, the dialog will be closed and the categorized files will be recorded
+ * to the database.
+ *
+ * @param categorized_files The vector of categorized files to be displayed in the dialog.
+ */
 void CategorizationDialog::show_results(
     const std::vector<CategorizedFile>& categorized_files)
 {
@@ -232,6 +310,17 @@ void CategorizationDialog::show_results(
 }
 
 
+/**
+ * @brief Gets the categorized files from the treeview.
+ *
+ * This function iterates over the treeview's model and constructs a vector of
+ * tuples containing the file name, file type, category, and subcategory for each
+ * row in the treeview. The file type is represented as a single character, either
+ * 'F' for files or 'D' for directories. The category and subcategory are represented
+ * as strings.
+ *
+ * @return A vector of tuples containing the categorized files.
+ */
 std::vector<std::tuple<std::string, std::string, std::string, std::string>>
 CategorizationDialog::get_categorized_files_from_treeview()
 {
@@ -265,6 +354,19 @@ CategorizationDialog::get_categorized_files_from_treeview()
     return categorized_files;
 }
 
+
+/**
+ * @brief Confirms categorization and attempts to move files accordingly.
+ *
+ * This function is triggered when the confirm and sort button is clicked.
+ * It first records the current file categorization data to the database,
+ * then retrieves categorized files from the treeview. For each file, it
+ * attempts to move the file to its designated category and subcategory
+ * directories. The function updates the sorted status icon for each file
+ * to indicate success or failure of the move operation. If any files cannot
+ * be moved because they already exist at the destination, a message is printed.
+ * Finally, it displays the close button to conclude the operation.
+ */
 
 void CategorizationDialog::on_confirm_and_sort_button_clicked()
 {
@@ -317,6 +419,13 @@ void CategorizationDialog::on_confirm_and_sort_button_clicked()
 }
 
 
+/**
+ * @brief Displays the close button and hides the confirm and continue buttons.
+ *
+ * This function hides the confirm and continue buttons, then sets up and 
+ * displays the close button to indicate the end of the categorization process.
+ */
+
 void CategorizationDialog::show_close_button()
 {
     gtk_widget_hide(GTK_WIDGET(confirm_button));
@@ -325,6 +434,15 @@ void CategorizationDialog::show_close_button()
 }
 
 
+/**
+ * @brief Destructor for the CategorizationDialog class.
+ *
+ * This destructor releases resources associated with the GtkBuilder
+ * instance by unreferencing it and setting the builder pointer to nullptr.
+ * It ensures proper cleanup of resources when a CategorizationDialog
+ * object is destroyed.
+ */
+
 CategorizationDialog::~CategorizationDialog() {
     if (builder) {
         g_object_unref(builder);
@@ -332,6 +450,20 @@ CategorizationDialog::~CategorizationDialog() {
     }
 }
 
+
+/**
+ * @brief Handles editing of the category cell in the tree view.
+ * 
+ * This function is called when a category cell in the tree view is edited.
+ * It updates the corresponding cell in the GtkListStore with the new text
+ * provided by the user.
+ * 
+ * @param cell The GtkCellRendererText that was edited.
+ * @param path_string The string representation of the tree path to the 
+ *        row containing the cell that was edited.
+ * @param new_text The new text entered by the user for the category cell.
+ * @param liststore The GtkListStore containing the data model for the tree view.
+ */
 
 void CategorizationDialog::on_category_cell_edited(
     GtkCellRendererText *cell, gchar *path_string, gchar *new_text, GtkListStore *liststore)
@@ -347,6 +479,19 @@ void CategorizationDialog::on_category_cell_edited(
 }
 
 
+/**
+ * Handles editing of the subcategory cell in the tree view.
+ *
+ * This function is called when a subcategory cell in the tree view is edited.
+ * It updates the corresponding cell in the GtkListStore with the new text
+ * provided by the user.
+ *
+ * @param cell The GtkCellRendererText that was edited.
+ * @param path_string The string representation of the tree path to the
+ *        row containing the cell that was edited.
+ * @param new_text The new text entered by the user for the subcategory cell.
+ * @param liststore The GtkListStore containing the data model for the tree view.
+ */
 void CategorizationDialog::on_subcategory_cell_edited(
     GtkCellRendererText *cell, gchar *path_string, gchar *new_text, GtkListStore *liststore)
 {
@@ -361,6 +506,16 @@ void CategorizationDialog::on_subcategory_cell_edited(
 }
 
 
+/**
+ * Records the categorization of all files in the tree view to the database.
+ *
+ * This function iterates over the tree view's model and inserts or updates each
+ * file's categorization in the database. The data is stored in the file_categorization
+ * table with the file name, file type, directory path, category, and subcategory
+ * as columns. If the file already exists in the database, its category and
+ * subcategory are updated. If the file does not exist in the database, a new
+ * entry is inserted.
+ */
 void CategorizationDialog::record_categorization_to_db()
 {
     auto files = get_categorized_files_from_treeview();

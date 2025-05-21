@@ -9,6 +9,18 @@
 
 namespace fs = std::filesystem;
 
+/**
+ * @brief Returns a vector of FileEntry objects for the given directory path and options.
+ * 
+ * The returned vector contains FileEntry objects for all files and directories in the given directory path,
+ * filtered according to the given options.
+ * 
+ * @param directory_path The path of the directory to scan.
+ * @param options A combination of FileScanOptions flags that determine what types of files and directories
+ * to include in the returned vector.
+ * 
+ * @return A vector of FileEntry objects for the given directory path and options.
+ */
 std::vector<FileEntry>
 FileScanner::get_directory_entries(const std::string &directory_path,
                                    FileScanOptions options)
@@ -37,6 +49,16 @@ FileScanner::get_directory_entries(const std::string &directory_path,
 }
 
 
+/**
+ * @brief Checks if a file is hidden.
+ *
+ * Checks if the given file is hidden, either by checking the file's attributes
+ * on Windows or by checking if the filename starts with a dot on Unix-like systems.
+ *
+ * @param path The path to the file to check.
+ *
+ * @return True if the file is hidden, false otherwise.
+ */
 bool FileScanner::is_file_hidden(const fs::path &path) {
     #ifdef _WIN32
     DWORD attrs = GetFileAttributesW(path.c_str());

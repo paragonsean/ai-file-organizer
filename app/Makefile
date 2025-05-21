@@ -15,11 +15,13 @@ ifeq ($(UNAME), Linux)
     LDFLAGS += -lcurl -ljsoncpp -lsqlite3 -lcrypto -lfmt -lspdlog -lssl
 else ifeq ($(UNAME), Darwin)
     PLATFORM := MacOS
-    CXXFLAGS += -DMACOS
+    CXXFLAGS += -DMACOS 
+    CXXFLAGS += -I/opt/homebrew/include 
+    CXXFLAGS += -I/opt/homebrew/include/jsoncpp
     TARGET := $(BIN_DIR)/aifilesorter
     INSTALL_DIR := /usr/local/bin
     RESOURCE_DIR := /usr/local/share/aifilesorter
-    LDFLAGS += -lcurl -ljsoncpp -lsqlite3 -lcrypto -lfmt -lspdlog -lssl
+    LDFLAGS += -lcurl -ljsoncpp -lsqlite3 -lcrypto -lfmt -L/opt/homebrew/lib -lspdlog -lssl
 else ifeq ($(UNAME), MINGW32_NT)
     PLATFORM := Windows (32-bit)
     CXXFLAGS += -DWINDOWS

@@ -18,6 +18,39 @@
 #include <future>
 
 
+/**
+ * Constructs an Updater object.
+ *
+ * This constructor requires a reference to a Settings object. It will throw an
+ * exception if the UPDATE_SPEC_FILE_URL environment variable is not set.
+ *
+ * The UPDATE_SPEC_FILE_URL environment variable should specify the URL of a JSON
+ * file that describes the most recent update available for download. The JSON
+ * file should have the following format:
+ *
+ * {
+ *   "update": {
+ *     "current_version": "1.0.0",
+ *     "min_version": "0.8.0",
+ *     "download_url": "https://example.com/update.zip",
+ *     "release_notes_url": "https://example.com/release-notes.html",
+ *     "is_required": false
+ *   }
+ * }
+ *
+ * The current_version field specifies the version of the update.
+ * The min_version field specifies the minimum version of the application that
+ * is required in order to install this update.
+ * The download_url field specifies the URL from which the update can be
+ * downloaded.
+ * The release_notes_url field specifies the URL of the release notes for the
+ * update.
+ * The is_required field specifies whether the update is required. If true,
+ * the user will be prompted to install the update before they can continue
+ * using the application.
+ *
+ * @param settings The Settings object to use.
+ */
 Updater::Updater(Settings& settings) 
     :
     settings(settings),
@@ -31,6 +64,22 @@ Updater::Updater(Settings& settings)
     }())
 {}
 
+
+/**
+ * Checks for available updates by fetching and parsing update metadata.
+ *
+ * This function retrieves update information from a remote JSON file
+ * specified by the environment variable UPDATE_SPEC_FILE_URL. It parses
+ * the JSON to extract update details such as current version, minimum
+ * version, and download URL. If the application version is older than
+ * the current version from the update metadata, the update information
+ * is stored in the update_info field as an optional UpdateInfo object.
+ * If the JSON does not contain valid update information or if the
+ * application is already up-to-date, the update_info is reset.
+ *
+ * Throws:
+ *   std::runtime_error - If there is an error in parsing the JSON.
+ */
 
 void Updater::check_updates()
 {
@@ -73,6 +122,15 @@ void Updater::check_updates()
 }
 
 
+/**
+ * Checks for updates and returns true if an update is available, false otherwise.
+ *
+ * If no update is available, this function will return false. If an update is
+ * available, this function will return true and store the update information in
+ * the update_info member variable.
+ *
+ * @return true if an update is available, false otherwise
+ */
 bool Updater::is_update_available()
 {
     check_updates();
@@ -80,11 +138,28 @@ bool Updater::is_update_available()
 }
 
 
+/**
+ * Checks if the update is required, by comparing the minimum version
+ * specified in the update information with the current application version.
+ *
+ * @return true if the update is required, false otherwise
+ */
 bool Updater::is_update_required()
 {
     return string_to_Version(update_info.value_or(UpdateInfo()).min_version) > APP_VERSION;
 }
 
+
+/**
+ * Initiates the update process by checking for available updates asynchronously.
+ *
+ * This method launches an asynchronous task to check for updates. If an update
+ * is available, it schedules a GUI update to display a dialog, prompting the user
+ * about the update. If the update is required, the user will be prompted to update
+ * immediately or quit the application. If the update is optional and not skipped,
+ * the user will be prompted to update. If no updates are available or if an error
+ * occurs, appropriate messages will be logged.
+ */
 
 void Updater::begin()
 {
@@ -113,6 +188,16 @@ void Updater::begin()
 }
 
 
+/**
+ * Checks if the current application version is less than or equal to the
+ * version specified in the "skipped_version" setting.
+ *
+ * This method is used to determine if the user has chosen to skip an update.
+ * If the application version is less than or equal to the skipped version,
+ * this method returns true. Otherwise, it returns false.
+ *
+ * @return true if the update is skipped, false otherwise
+ */
 bool Updater::is_update_skipped()
 {
     Version skipped_version = string_to_Version(settings.get_skipped_version());
@@ -120,6 +205,23 @@ bool Updater::is_update_skipped()
 }
 
 
+/**
+ * Displays a dialog to the user about an available update.
+ *
+ * @param is_required whether the update is required (true) or optional (false)
+ *
+ * If the update is required, the user is given the option to update now or quit.
+ * Otherwise, the user is given the option to update now, skip this version, or cancel.
+ *
+ * If the user chooses to update now, the application will attempt to open the
+ * download URL in the default browser. If the update is required, the application
+ * will exit after the dialog is closed. If the user chooses to skip this version,
+ * the skipped version will be saved to the application settings.
+ *
+ * If the user chooses to cancel while viewing an optional update, the dialog
+ * will simply close. If the user chooses to cancel while viewing a required
+ * update, the application will exit.
+ */
 void Updater::display_update_dialog(bool is_required) {
     GtkWidget* dialog;
     GtkWidget* content_area;
@@ -251,11 +353,38 @@ void Updater::display_update_dialog(bool is_required) {
 }
 
 
+/**
+ * Helper function to write the response from curl into a string.
+ * This function is designed to be used with libcurl's CURLOPT_WRITEFUNCTION.
+ *
+ * @param contents The data to be written to the string.
+ * @param size The size of each element in the contents array.
+ * @param nmemb The number of elements in the contents array.
+ * @param userp A pointer to a string to append the contents to.
+ *
+ * @return The total size of the data written.
+ */
 size_t WriteCallback(void* contents, size_t size, size_t nmemb, void* userp) {
     ((std::string*)userp)->append((char*)contents, size * nmemb);
     return size * nmemb;
 }
 
+
+/**
+ * @brief Fetches update metadata from the specified URL.
+ *
+ * This function initializes a cURL session to send a GET request to the
+ * URL specified by the `update_spec_file_url` member variable. The response
+ * is written to a string using the `WriteCallback` function. It handles
+ * various HTTP response codes to determine if the request was successful or
+ * if there were errors such as network, authentication, or server issues.
+ *
+ * @return A string containing the response data from the server.
+ *
+ * @exception std::runtime_error If there is an error during the cURL
+ * initialization, network communication, or if the server returns an error
+ * status code.
+ */
 
 std::string Updater::fetch_update_metadata() const {
     CURL *curl = curl_easy_init();
@@ -311,6 +440,17 @@ std::string Updater::fetch_update_metadata() const {
     return response_string;
 }
 
+
+/**
+ * Converts a version string into a Version object.
+ *
+ * The version string is expected to be in the format "x.y.z", where x, y, and z
+ * are integers representing the version segments. These segments are parsed and
+ * stored in a Version object.
+ *
+ * @param version_str The version string to convert.
+ * @return A Version object representing the parsed version.
+ */
 
 Version Updater::string_to_Version(const std::string& version_str) {
     std::vector<int> digits;

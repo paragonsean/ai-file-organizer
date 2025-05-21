@@ -34,6 +34,36 @@
 extern GResource *resources_get_resource();
 
 
+/**
+ * Constructor for MainApp.
+ *
+ * This constructor initializes the application and starts the GTK+ main loop.
+ * It takes argc and argv as parameters, which are passed to the GTK+
+ * application constructor.
+ *
+ * The constructor initializes the following members:
+ * - builder: a Gtk::Builder object for loading the UI from a file
+ * - settings: a Settings object for storing and retrieving application settings
+ * - db_manager: a DatabaseManager object for managing the database
+ * - categorization_dialog: a CategorizationDialog object for displaying the
+ *   categorization dialog
+ * - use_subcategories_checkbox: a Gtk::CheckButton object for the "Use
+ *   subcategories" checkbox
+ * - categorize_files_checkbox: a Gtk::CheckButton object for the "Categorize
+ *   files" checkbox
+ * - categorize_directories_checkbox: a Gtk::CheckButton object for the
+ *   "Categorize directories" checkbox
+ * - core_logger: a Logger object for logging core messages
+ * - ui_logger: a Logger object for logging UI messages
+ * - file_scan_options: a FileScanOptions object for specifying the file scan
+ *   options
+ *
+ * The constructor also sets the stop_analysis flag to false, which is used to
+ * indicate whether the analysis should be stopped.
+ *
+ * Finally, the constructor calls the GTK+ application constructor and starts
+ * the main loop by calling g_application_run.
+ */
 MainApp::MainApp(int argc, char **argv)
     : builder(nullptr),
       settings(),
@@ -55,6 +85,13 @@ MainApp::MainApp(int argc, char **argv)
 }
 
 
+/**
+ * Creates a new GtkApplication instance for the AI File Sorter application.
+ * Depending on the GLib version, different application flags are set.
+ * 
+ * @return A pointer to the newly created GtkApplication.
+ */
+
 GtkApplication* MainApp::create_app()
 {
     #if GLIB_CHECK_VERSION(2, 74, 0)
@@ -65,6 +102,17 @@ GtkApplication* MainApp::create_app()
 }
 
 
+/**
+ * Wrapper for the activate signal of GtkApplication.
+ * 
+ * This function is called when the GtkApplication is activated.
+ * It casts the user_data to a MainApp instance and calls the
+ * on_activate method of that instance.
+ * 
+ * @param gtk_app The GtkApplication instance that was activated.
+ * @param user_data A pointer to the MainApp instance.
+ */
+
 void MainApp::on_activate_wrapper(GtkApplication *gtk_app, gpointer user_data)
 {
     MainApp *self = static_cast<MainApp*>(user_data);
@@ -72,12 +120,26 @@ void MainApp::on_activate_wrapper(GtkApplication *gtk_app, gpointer user_data)
 }
 
 
+/**
+ * Called when the application is about to quit.
+ * 
+ * Saves the settings and then tells the GtkApplication to quit.
+ */
 void MainApp::on_quit()
 {
     save_settings();
     g_application_quit(G_APPLICATION(gtk_app));
 }
 
+
+/**
+ * Loads the application settings from the configuration file.
+ * 
+ * If loading the settings fails, it logs an informational message
+ * and defaults are used. After loading the settings, it synchronizes
+ * them with the UI elements to ensure consistency between the stored
+ * settings and the user interface state.
+ */
 
 void MainApp::load_settings() {
     if (!settings.load()) {
@@ -87,10 +149,29 @@ void MainApp::load_settings() {
 }
 
 
+
+/**
+ * Saves the current application settings.
+ *
+ * This method synchronizes the user interface state with the application
+ * settings and then persists these settings to a file. It ensures that
+ * any changes made in the UI are reflected in the stored settings.
+ */
+
 void MainApp::save_settings() {
     sync_ui_to_settings();
     settings.save();
 }
+
+
+/**
+ * Initializes the application's checkboxes.
+ *
+ * This method retrieves the checkboxes from the UI, checks if they are
+ * valid, and sets up their state based on the application's settings.
+ * on_checkbox_toggled method, which is responsible for updating the
+ * application's state when a checkbox is toggled.
+ */
 
 
 void MainApp::initialize_checkboxes() {

@@ -7,18 +7,37 @@
 extern GResource *resources_get_resource();
 
 
+/**
+ * Constructs an EmbeddedEnv object from a GResource path.
+ *
+ * @param resource_path a path in a GResource, e.g. "/com/example/MyApp/resources/.env"
+ */
 EmbeddedEnv::EmbeddedEnv(const std::string& resource_path)
     : resource_path_(resource_path)
 {
 }
 
 
+
+/**
+ * Loads environment variables from the .env file embedded in the GResource at the resource_path_ path.
+ *
+ * This function is usually called from the constructor, so you don't need to call it explicitly.
+ */
 void EmbeddedEnv::load_env() {
     std::string env_content = extract_env_content();
     parse_env(env_content);
 }
 
 
+/**
+ * Extracts the contents of the .env file embedded in the GResource at the resource_path_ path.
+ *
+ * This function looks up the GResource at the resource_path_ path and loads its contents as a string.
+ * If the resource is not found, it throws a std::runtime_error with a descriptive error message.
+ *
+ * \returns a string containing the contents of the .env file
+ */
 std::string EmbeddedEnv::extract_env_content()
 {
     GError* error = NULL;
@@ -42,6 +61,17 @@ std::string EmbeddedEnv::extract_env_content()
 }
 
 
+/**
+ * Parses the contents of the .env file and sets the environment variables accordingly.
+ *
+ * This function expects a string containing the contents of a .env file and sets the environment
+ * variables accordingly. The format of the string is expected to be the standard format for
+ * .env files, i.e., each line is of the form "KEY=VALUE". Empty lines and lines starting with '#'
+ * are ignored.
+ *
+ * If a line is invalid, i.e., it does not contain a '=', a std::runtime_error is thrown with a
+ * descriptive error message.
+ */
 void EmbeddedEnv::parse_env(const std::string& env_content) {
     std::istringstream stream(env_content);
     std::string line;
@@ -71,6 +101,17 @@ void EmbeddedEnv::parse_env(const std::string& env_content) {
     }
 }
 
+
+/**
+ * Trims leading and trailing whitespace from the given string.
+ *
+ * This function removes all leading and trailing whitespace characters
+ * from the input string `str`, where whitespace characters are defined
+ * as space, tab, newline, carriage return, form feed, and vertical tab.
+ *
+ * @param str The input string to be trimmed.
+ * @return A new string with leading and trailing whitespace removed.
+ */
 
 std::string EmbeddedEnv::trim(const std::string& str) {
     const char* whitespace = " \t\n\r\f\v";

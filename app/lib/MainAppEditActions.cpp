@@ -1,6 +1,11 @@
 #include "MainAppEditActions.hpp"
 
 
+/**
+ * Pastes the text in the clipboard into the GtkEditable path_entry at the current position.
+ *
+ * @param path_entry The GtkEntry to paste the text into.
+ */
 void MainAppEditActions::on_paste(GtkEntry* path_entry) {
     GtkEditable* editable = GTK_EDITABLE(path_entry);
     gchar* clipboard_text = gtk_clipboard_wait_for_text(gtk_clipboard_get(GDK_SELECTION_CLIPBOARD));
@@ -13,6 +18,11 @@ void MainAppEditActions::on_paste(GtkEntry* path_entry) {
 }
 
 
+/**
+ * Copies the selected text in the path_entry to the clipboard.
+ *
+ * @param path_entry the widget to copy from
+ */
 void MainAppEditActions::on_copy(GtkEntry* path_entry) {
     GtkEditable* editable = GTK_EDITABLE(path_entry);
     gchar* selected_text = get_and_delete_selection(editable, FALSE);
@@ -24,6 +34,11 @@ void MainAppEditActions::on_copy(GtkEntry* path_entry) {
 }
 
 
+/**
+ * Cuts the selected text in the path_entry to the clipboard and removes it.
+ *
+ * @param path_entry the widget to cut from
+ */
 void MainAppEditActions::on_cut(GtkEntry* path_entry) {
     GtkEditable* editable = GTK_EDITABLE(path_entry);
     gchar* selected_text = get_and_delete_selection(editable, TRUE); // Explicitly pass TRUE
@@ -35,12 +50,22 @@ void MainAppEditActions::on_cut(GtkEntry* path_entry) {
 }
 
 
+/**
+ * Deletes the currently selected text in the path_entry.
+ *
+ * @param path_entry the widget to delete the selection from
+ */
 void MainAppEditActions::on_delete(GtkEntry* path_entry) {
     GtkEditable* editable = GTK_EDITABLE(path_entry);
     get_and_delete_selection(editable, TRUE); // Explicitly pass TRUE to delete the selection
 }
 
 
+/**
+ * Copies the given text to the clipboard.
+ *
+ * @param text the text to copy; if nullptr, does nothing
+ */
 void MainAppEditActions::copy_to_clipboard(const gchar* text)
 {
     if (text) {
@@ -49,6 +74,16 @@ void MainAppEditActions::copy_to_clipboard(const gchar* text)
 }
 
 
+/**
+ * Retrieves the currently selected text from the given editable widget,
+ * and if requested (default), deletes the selection from the widget.
+ *
+ * @param editable the widget to get the selection from
+ * @param delete_selection if TRUE, deletes the selection from the widget;
+ *                         if FALSE, just returns the selected text
+ * @return the selected text, or nullptr if there is no selection;
+ *         the caller is responsible for freeing this string
+ */
 gchar* MainAppEditActions::get_and_delete_selection(GtkEditable* editable, gboolean delete_selection = TRUE)
 {
     gint start, end;

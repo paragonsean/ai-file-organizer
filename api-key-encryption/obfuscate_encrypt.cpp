@@ -23,6 +23,18 @@ int setenv(const char *name, const char *value, int overwrite) {
 #include <openssl/rand.h>
 
 
+/**
+ * Encodes the input string into Base64 format.
+ *
+ * This function takes a standard string input and converts it into a 
+ * Base64-encoded string. It uses OpenSSL's BIO library functions to 
+ * perform the encoding. The resulting Base64 string does not contain 
+ * newline characters.
+ *
+ * @param input The string to be encoded.
+ * @return A Base64-encoded string.
+ */
+
 std::string base64_encode(const std::string& input) {
     BIO *bio, *b64;
     BUF_MEM *buffer_ptr;
@@ -43,6 +55,17 @@ std::string base64_encode(const std::string& input) {
 }
 
 
+/**
+ * Decodes a Base64-encoded string.
+ *
+ * This function takes a Base64-encoded string and decodes it into its original
+ * form. It uses OpenSSL's BIO library functions to perform the decoding. If
+ * the decoding process fails, a std::runtime_error is thrown.
+ *
+ * @param encoded The Base64-encoded string to be decoded.
+ * @return A string containing the decoded data.
+ * @throws std::runtime_error if the Base64 decoding fails.
+ */
 std::string base64_decode(const std::string& encoded) {
     BIO *bio, *b64;
     int decode_len = encoded.size() * 3 / 4; // Approximation of the decoded size
@@ -69,6 +92,17 @@ std::string base64_decode(const std::string& encoded) {
 }
 
 
+/**
+ * Splits an API key into two parts.
+ *
+ * This function takes an API key and splits it into two equal-sized parts. The
+ * key must be at least two characters long to split. If the key is too short,
+ * a std::invalid_argument exception is thrown.
+ *
+ * @param api_key The API key to be split.
+ * @return A pair of strings, each containing one half of the API key.
+ * @throws std::invalid_argument if the API key is too short to split.
+ */
 std::pair<std::string, std::string> decompose_key(const std::string& api_key)
 {
     // Ensure the key is long enough to split
@@ -85,12 +119,34 @@ std::pair<std::string, std::string> decompose_key(const std::string& api_key)
 }
 
 
+/**
+ * Reassembles a key by concatenating two parts.
+ *
+ * This function takes two parts of a key and combines them into a single string.
+ * The parts are concatenated in the order provided.
+ *
+ * @param part1 The first part of the key.
+ * @param part2 The second part of the key.
+ * @return A string containing the reassembled key.
+ */
+
 std::string reassemble_key(const std::string& part1, const std::string& part2)
 {
     return part1 + part2;
 }
 
 
+/**
+ * Generates a random salt of the given length.
+ *
+ * The salt is a string of the given length composed of characters from the
+ * set of lowercase letters, uppercase letters, and digits. The default length
+ * is 16.
+ *
+ * @param length The length of the salt to generate. Defaults to 16.
+ *
+ * @return A randomly generated salt of the given length.
+ */
 std::string generate_random_salt(size_t length = 16) {
     const char charset[] = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
     const size_t max_index = sizeof(charset) - 2;
@@ -108,6 +164,18 @@ std::string generate_random_salt(size_t length = 16) {
 }
 
 
+/**
+ * Obfuscates the given data using the provided salt by applying
+ * an XOR operation between each character of the data and the 
+ * corresponding character in the salt. The salt is repeated 
+ * cyclically if it is shorter than the data.
+ *
+ * @param data A string containing the data to be obfuscated.
+ * @param salt A string used to XOR with the data to generate the obfuscated data.
+ *
+ * @return A string containing the obfuscated data.
+ */
+
 std::string obfuscate_with_salt(const std::string& data, const std::string& salt) {
     std::string obfuscated_data;
     size_t salt_index = 0;
@@ -121,6 +189,17 @@ std::string obfuscate_with_salt(const std::string& data, const std::string& salt
 }
 
 
+/**
+ * Deobfuscates the given data using the provided salt by applying
+ * an XOR operation between each character of the obfuscated data and the
+ * corresponding character in the salt. The salt is repeated cyclically if
+ * it is shorter than the obfuscated data.
+ *
+ * @param obfuscated_data A string containing the obfuscated data to be deobfuscated.
+ * @param salt A string used to XOR with the obfuscated data to retrieve the original data.
+ *
+ * @return A string containing the deobfuscated original data.
+ */
 std::string deobfuscate_with_salt(const std::string& obfuscated_data, const std::string& salt) {
     std::string decoded_data;
     size_t salt_index = 0;
@@ -138,6 +217,23 @@ std::string deobfuscate_with_salt(const std::string& obfuscated_data, const std:
 }
 
 
+/**
+ * Deobfuscates a given string by reversing the obfuscation process.
+ *
+ * This function assumes that the input string is composed of a salt 
+ * prefixed to a Base64-encoded obfuscated data. The salt is used in 
+ * conjunction with an XOR operation to deobfuscate the data. The 
+ * function extracts the salt from the input, decodes the remaining 
+ * Base64-encoded string, and then applies the inverse of the 
+ * obfuscation algorithm to retrieve the original data.
+ *
+ * @param obfuscated_data The obfuscated string that includes both the 
+ *                        salt and the Base64-encoded data.
+ * @return The original deobfuscated string.
+ * @throws std::runtime_error if the input string is too short to 
+ *                            contain both a salt and obfuscated data.
+ */
+
 std::string deobfuscate(const std::string& obfuscated_data) {
     constexpr size_t salt_length = 16;
 
@@ -153,6 +249,19 @@ std::string deobfuscate(const std::string& obfuscated_data) {
 }
 
 
+/**
+ * Obfuscates a given string with a given salt, and encodes it with Base64.
+ *
+ * This function first obfuscates the input string by applying an XOR operation
+ * with the given salt. The result is then encoded with Base64 and prefixed with
+ * the salt. The output is a string that includes both the salt and the obfuscated
+ * data.
+ *
+ * @param data The string to be obfuscated.
+ * @param salt The salt used for obfuscation.
+ * @return The obfuscated string, including the salt and the Base64-encoded
+ *         obfuscated data.
+ */
 std::string obfuscate(const std::string& data, std::string& salt) {
     std::cout << "Salt: " << salt << std::endl;
 
@@ -166,6 +275,21 @@ std::string obfuscate(const std::string& data, std::string& salt) {
 }
 
 
+/**
+ * Encrypts a given string with a given key using AES-256-CBC.
+ *
+ * This function takes a plaintext string and a key as input, and returns the
+ * encrypted data as a vector of unsigned characters. The key must be 32 bytes
+ * (256 bits) long. The function first generates a random initialization vector
+ * (IV) and prepends it to the ciphertext. The output is a vector of unsigned
+ * characters that includes both the IV and the encrypted data.
+ *
+ * @param plaintext The string to be encrypted.
+ * @param key The 32-byte (256-bit) key used for encryption.
+ * @return The encrypted data as a vector of unsigned characters.
+ * @throws std::runtime_error if the key length is not 32 bytes or if there is
+ *                            an error during encryption.
+ */
 std::vector<unsigned char> aes256_encrypt(const std::string& plaintext, const std::string& key) {
     // Ensure the key length is 32 bytes (256 bits)
     if (key.size() != 32) {
@@ -219,6 +343,25 @@ std::vector<unsigned char> aes256_encrypt(const std::string& plaintext, const st
 }
 
 
+/**
+ * Decrypts the given ciphertext using AES-256 in CBC mode.
+ *
+ * This function takes a ciphertext and a key, both provided as inputs, and
+ * decrypts the ciphertext using the AES-256 algorithm with CBC mode of operation.
+ * The key must be 32 bytes long. The ciphertext must contain a 16-byte
+ * initialization vector (IV) at its beginning, which is used during the decryption
+ * process.
+ *
+ * @param ciphertext A vector of unsigned char containing the encrypted data,
+ *                   with the first 16 bytes being the IV.
+ * @param key A string representing the decryption key, which must be 32 bytes long.
+ *
+ * @return A string containing the decrypted plaintext.
+ *
+ * @throws std::runtime_error if the key is not 32 bytes, if the ciphertext is too short
+ *                            to contain an IV, if the decryption context cannot be created,
+ *                            or if any step of the decryption fails.
+ */
 std::string aes256_decrypt(const std::vector<unsigned char>& ciphertext, const std::string& key) {
     if (key.size() != 32) {
         throw std::runtime_error("Key must be 32 bytes (256 bits) for AES-256 decryption.");
@@ -269,6 +412,16 @@ std::string aes256_decrypt(const std::vector<unsigned char>& ciphertext, const s
 }
 
 
+/**
+ * The main function of the program.
+ *
+ * It reads the API key and the secret key from the environment variables,
+ * decomposes the secret key into two parts, obfuscates each part, prints out
+ * the obfuscated parts, deobfuscates the parts, reassembles the key, checks
+ * if the recomposed key matches the original secret key, encrypts the API key
+ * using the secret key, prints out the encrypted data in hex, decrypts the
+ * data, and prints out the decrypted data.
+ */
 int main()
 {
     dotenv::init("encryption.ini");

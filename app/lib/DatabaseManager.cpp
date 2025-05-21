@@ -10,6 +10,21 @@
 #include <Types.hpp>
 
 
+/**
+ * Constructs a DatabaseManager object and initializes the SQLite database.
+ * 
+ * @param config_dir The directory path where the database file is located.
+ * 
+ * Initializes the database connection using the provided configuration directory.
+ * If the environment variable "CATEGORIZATION_CACHE_FILE" is set, it uses its value
+ * as the database file name; otherwise, defaults to "categorization_results.db".
+ * If the database file path is empty or the database cannot be opened, an error
+ * message is printed. Ensures that the 'file_categorization' table exists in the
+ * database, creating it if necessary, with columns for file name, type, directory path,
+ * category, subcategory, and a timestamp, with a unique constraint on file name, type,
+ * and directory path.
+ */
+
 DatabaseManager::DatabaseManager(std::string config_dir) :
     config_dir(config_dir),
     db_file(config_dir + "/" + 
@@ -48,6 +63,13 @@ DatabaseManager::DatabaseManager(std::string config_dir) :
 }
 
 
+/**
+ * Destructor for the DatabaseManager class.
+ *
+ * Closes the SQLite database connection if it is open to ensure
+ * proper resource management and to prevent memory leaks.
+ */
+
 DatabaseManager::~DatabaseManager() {
     if (db) {
         sqlite3_close(db);
@@ -55,6 +77,17 @@ DatabaseManager::~DatabaseManager() {
 }
 
 
+/**
+ * Inserts a new entry into the database or updates an existing entry if it already exists.
+ *
+ * @param file_name The name of the file or directory to be categorized.
+ * @param file_type The type of file, either FileType::File or FileType::Directory.
+ * @param dir_path The directory path where the file or directory is located.
+ * @param category The top-level category assigned to the file or directory.
+ * @param subcategory The subcategory assigned to the file or directory.
+ *
+ * @return true if the operation was successful, false otherwise.
+ */
 bool DatabaseManager::insert_or_update_file_with_categorization(const std::string& file_name,
                                                                 const std::string& file_type,
                                                                 const std::string& dir_path, 
@@ -89,6 +122,20 @@ bool DatabaseManager::insert_or_update_file_with_categorization(const std::strin
     return true;
 }
 
+
+/**
+ * Retrieves a list of categorized files from the database for a given directory path.
+ *
+ * @param directory_path The directory path to filter categorized files by.
+ * 
+ * @return A vector of CategorizedFile objects, each containing metadata such as directory path,
+ *         file name, file type, category, and subcategory.
+ *
+ * This function executes an SQL query to select categorized files from the 'file_categorization'
+ * table where the directory path matches the specified parameter. If the directory path cannot
+ * be bound or the query preparation fails, an empty vector is returned. The query results
+ * are transformed into CategorizedFile objects which are then collected into a vector.
+ */
 
 std::vector<CategorizedFile>
 DatabaseManager::get_categorized_files(const std::string& directory_path)
@@ -133,6 +180,15 @@ DatabaseManager::get_categorized_files(const std::string& directory_path)
 }
 
 
+/**
+ * Retrieves the categorization of a file from the database.
+ *
+ * @param file_name The name of the file to query.
+ * @param file_type The type of the file to query (file or directory).
+ *
+ * @return A vector of two strings, where the first element is the category and the second element is the subcategory.
+ *         If the query fails or the file does not exist in the database, an empty vector is returned.
+ */
 std::vector<std::string>
 DatabaseManager::get_categorization_from_db(const std::string& file_name, const FileType file_type)
 {

@@ -10,6 +10,17 @@
 extern GResource *resources_get_resource();
 
 
+/**
+ * Initializes the logging system for the application.
+ *
+ * This function attempts to set up the loggers by calling Logger::setup_loggers.
+ * If the setup is successful, it returns true. If an exception is thrown during
+ * the setup process, it catches the exception, logs an error message to the standard
+ * error stream, and returns false.
+ *
+ * @return true if the loggers are successfully initialized, false otherwise.
+ */
+
 bool initialize_loggers()
 {
     try {
@@ -21,6 +32,18 @@ bool initialize_loggers()
     }
 }
 
+
+/**
+ * The entry point for the application.
+ *
+ * Initializes logging and environment settings, registers resources, sets locale,
+ * and starts the main application. If initialization or execution fails, it logs
+ * the error and exits with a failure status.
+ *
+ * @param argc The number of command-line arguments.
+ * @param argv An array of command-line argument strings.
+ * @return EXIT_SUCCESS on successful execution, or EXIT_FAILURE on error.
+ */
 
 int main(int argc, char **argv)
 {
